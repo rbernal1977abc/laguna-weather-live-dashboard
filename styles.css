@@ -1,0 +1,39 @@
+/* Add these to your existing styles.css */
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .header {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+  
+  .brand {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .mapBox {
+    height: 300px !important;
+  }
+  
+  .container {
+    padding: 8px !important;
+  }
+}
+
+/* Touch-friendly buttons */
+.select, input[type="number"], input[type="text"] {
+  min-height: 44px; /* Minimum touch target size */
+}
+
+/* Better mobile scrolling */
+@media (max-width: 768px) {
+  [style*="max-height"] {
+    max-height: 200px !important;
+  }
+}
