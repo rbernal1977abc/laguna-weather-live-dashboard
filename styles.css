@@ -1,39 +1,129 @@
-/* Add these to your existing styles.css */
+body { 
+  font-family: Inter, system-ui, Arial, sans-serif; 
+  margin:0; 
+  background:#f6f7fb; 
+  color:#111; 
+  font-size: 14px;
+}
 
-/* Mobile Responsiveness */
-@media (max-width: 768px) {
+.header { 
+  display:flex; 
+  justify-content:space-between; 
+  align-items:center; 
+  padding:16px; 
+  max-width:1200px; 
+  margin:0 auto; 
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.brand { 
+  display:flex; 
+  align-items:center; 
+  gap:12px; 
+}
+
+.title { 
+  font-size:18px; 
+  font-weight:600; 
+  color: #1890ff;
+}
+
+.container { 
+  max-width:1200px; 
+  margin:12px auto; 
+  padding:0 16px; 
+}
+
+.grid { 
+  display:grid; 
+  grid-template-columns:1fr; 
+  gap:16px; 
+}
+
+@media (min-width: 768px) {
   .grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns:1fr 400px;
   }
-  
+}
+
+.card { 
+  background:white; 
+  padding:16px; 
+  border-radius:8px; 
+  box-shadow:0 2px 8px rgba(0,0,0,0.06);
+  border: 1px solid #f0f0f0;
+}
+
+.select { 
+  padding:10px; 
+  border-radius:6px; 
+  border:1px solid #ccc; 
+  width: 100%;
+  font-size: 14px;
+}
+
+.mapBox { 
+  height:300px; 
+  border-radius:8px; 
+  overflow:hidden; 
+}
+
+.footer { 
+  max-width:1200px; 
+  margin:20px auto; 
+  padding:16px; 
+  color:#666; 
+  font-size:12px; 
+  text-align: center;
+  border-top: 1px solid #f0f0f0;
+}
+
+.small { 
+  font-size:13px; 
+  color:#555; 
+}
+
+/* Mobile fixes */
+@media (max-width: 768px) {
   .header {
     flex-direction: column;
     text-align: center;
-    gap: 12px;
+    padding: 12px;
   }
   
   .brand {
     flex-direction: column;
-    text-align: center;
+    margin-bottom: 12px;
   }
   
-  .mapBox {
-    height: 300px !important;
+  .title {
+    font-size: 16px;
   }
   
   .container {
-    padding: 8px !important;
+    padding: 8px;
+  }
+  
+  .card {
+    padding: 12px;
+  }
+  
+  .mapBox {
+    height: 250px;
+  }
+  
+  /* Make buttons touch-friendly */
+  .select, input[type="number"], input[type="text"] {
+    min-height: 44px;
+    font-size: 16px; /* Prevents zoom on iOS */
   }
 }
 
-/* Touch-friendly buttons */
-.select, input[type="number"], input[type="text"] {
-  min-height: 44px; /* Minimum touch target size */
-}
-
-/* Better mobile scrolling */
+/* Touch scrolling */
 @media (max-width: 768px) {
   [style*="max-height"] {
-    max-height: 200px !important;
+    max-height: 200px;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
   }
 }
