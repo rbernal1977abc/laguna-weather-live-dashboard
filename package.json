@@ -1,5 +1,5 @@
 {
-  "name": "laguna-weather-dashboard",
+  "name": "laguna-weather",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -11,8 +11,6 @@
     "next": "13.4.10",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "axios": "^1.4.0",
-    "leaflet": "^1.9.4",
-    "react-leaflet": "^4.2.1"
+    "axios": "^1.4.0"
   }
 }
