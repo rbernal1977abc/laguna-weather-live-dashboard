@@ -1,75 +1,71 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import dynamic from 'next/dynamic';
-import '../styles.css';
 
-// Simple Map Component (all in one)
-const MapComponent = dynamic(() => {
-  return Promise.resolve(function Map({ center, cities, quakes, landmarks }) {
-    const [isLoaded, setIsLoaded] = useState(false);
-    
-    useEffect(() => {
-      setIsLoaded(true);
-    }, []);
-    
-    if (!isLoaded) {
-      return (
-        <div style={{
-          height: '300px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: '#f1f5f9',
-          borderRadius: '8px'
-        }}>
-          Loading map...
-        </div>
-      );
-    }
-    
-    return (
+// Laguna Cities
+const LGUS = [
+  { id: 'calamba', name: 'Calamba City', lat: 14.2117, lon: 121.1663 },
+  { id: 'santa_cruz', name: 'Santa Cruz (Capital)', lat: 14.2784, lon: 121.4163 },
+  { id: 'san_pablo', name: 'San Pablo City', lat: 14.0667, lon: 121.3250 },
+  { id: 'biñan', name: 'Biñan City', lat: 14.3333, lon: 121.0833 },
+  { id: 'cabuyao', name: 'Cabuyao City', lat: 14.2453, lon: 121.1156 },
+  { id: 'san_pedro', name: 'San Pedro City', lat: 14.3583, lon: 121.0583 },
+];
+
+// Simple Map Component
+function SimpleMap({ center, selectedName }) {
+  return (
+    <div style={{
+      height: '300px',
+      background: '#f1f5f9',
+      borderRadius: '8px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
       <div style={{
-        height: '300px',
-        background: '#f1f5f9',
-        borderRadius: '8px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: '200px',
+        height: '200px',
+        border: '2px solid #3b82f6',
+        borderRadius: '50%',
+        background: 'rgba(59, 130, 246, 0.1)'
+      }}></div>
+      <div style={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: '12px',
+        height: '12px',
+        background: '#ef4444',
+        borderRadius: '50%',
+        border: '2px solid white',
+        boxShadow: '0 0 0 3px #ef4444'
+      }}></div>
+      <div style={{
+        position: 'absolute',
+        bottom: '20px',
+        left: '0',
+        right: '0',
+        textAlign: 'center',
+        background: 'rgba(255, 255, 255, 0.9)',
+        padding: '10px',
+        margin: '0 20px',
+        borderRadius: '6px'
       }}>
-        <div style={{ textAlign: 'center', color: '#64748b' }}>
-          <div>Interactive Map</div>
-          <div style={{ fontSize: '12px', marginTop: '8px' }}>
-            Coordinates: {center.lat.toFixed(4)}, {center.lon.toFixed(4)}
-          </div>
-          <div style={{ fontSize: '11px', marginTop: '4px' }}>
-            {cities.length} cities • {quakes.length} earthquakes
-          </div>
+        <div style={{ fontWeight: 'bold', color: '#1e293b' }}>{selectedName}</div>
+        <div style={{ fontSize: '12px', color: '#64748b' }}>
+          Coordinates: {center.lat.toFixed(4)}, {center.lon.toFixed(4)}
         </div>
       </div>
-    );
-  });
-}, { ssr: false });
-
-// LAGUNA CITIES
-const LGUS = [
-  { id: 'calamba', name: 'Calamba City', lat: 14.2117, lon: 121.1663, type: 'city' },
-  { id: 'santa_cruz', name: 'Santa Cruz (Capital)', lat: 14.2784, lon: 121.4163, type: 'capital' },
-  { id: 'san_pablo', name: 'San Pablo City', lat: 14.0667, lon: 121.3250, type: 'city' },
-  { id: 'biñan', name: 'Biñan City', lat: 14.3333, lon: 121.0833, type: 'city' },
-  { id: 'cabuyao', name: 'Cabuyao City', lat: 14.2453, lon: 121.1156, type: 'city' },
-  { id: 'san_pedro', name: 'San Pedro City', lat: 14.3583, lon: 121.0583, type: 'city' },
-  { id: 'alaminos', name: 'Alaminos', lat: 14.0639, lon: 121.2461, type: 'municipality' },
-  { id: 'bay', name: 'Bay', lat: 14.1833, lon: 121.2833, type: 'municipality' },
-  { id: 'calauan', name: 'Calauan', lat: 14.1500, lon: 121.3167, type: 'municipality' },
-  { id: 'cavinti', name: 'Cavinti', lat: 14.2453, lon: 121.5075, type: 'municipality' },
-];
-
-// LAGUNA LANDMARKS
-const LANDMARKS = [
-  { id: 'makiling', name: 'Mount Makiling', lat: 14.1306, lon: 121.1933, type: 'volcano' },
-  { id: 'banahaw', name: 'Mount Banahaw', lat: 14.0667, lon: 121.4833, type: 'volcano' },
-  { id: 'laguna_lake', name: 'Laguna de Bay', lat: 14.3167, lon: 121.2167, type: 'lake' }
-];
+    </div>
+  );
+}
 
 export default function Home() {
   const [selected, setSelected] = useState(LGUS[0]);
@@ -78,16 +74,8 @@ export default function Home() {
   const [aqi, setAqi] = useState(null);
   const [quakes, setQuakes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
 
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // WEATHER DATA
+  // Fetch Weather Data
   useEffect(() => {
     async function fetchWeather() {
       setLoading(true);
@@ -118,7 +106,7 @@ export default function Home() {
     fetchWeather();
   }, [selected]);
 
-  // AIR QUALITY
+  // Fetch Air Quality
   useEffect(() => {
     async function fetchAq() {
       try {
@@ -135,7 +123,7 @@ export default function Home() {
     fetchAq();
   }, [selected]);
 
-  // EARTHQUAKES
+  // Fetch Earthquakes
   useEffect(() => {
     async function fetchQuakes() {
       try {
@@ -173,33 +161,100 @@ export default function Home() {
     return '#8b5cf6';
   };
 
+  const getAqiLevel = (aqi) => {
+    if (!aqi) return 'Unknown';
+    if (aqi <= 50) return 'Good';
+    if (aqi <= 100) return 'Moderate';
+    if (aqi <= 150) return 'Unhealthy for Sensitive';
+    if (aqi <= 200) return 'Unhealthy';
+    return 'Very Unhealthy';
+  };
+
   return (
-    <div>
-      <header className="header">
-        <div className="brand">
-          <div className="logo-placeholder">L</div>
+    <div style={{ 
+      minHeight: '100vh', 
+      background: '#f8fafc',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    }}>
+      {/* Header */}
+      <header style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '16px',
+        background: 'white',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{
+            width: '44px',
+            height: '44px',
+            background: 'linear-gradient(135deg, #3b82f6, #10b981)',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            fontWeight: 'bold',
+            fontSize: '20px'
+          }}>
+            L
+          </div>
           <div>
-            <div className="title">Laguna Weather Dashboard</div>
-            <div className="small">100% Free • Real-time • Mobile Ready</div>
+            <div style={{ fontSize: '18px', fontWeight: '700', color: '#1e293b' }}>
+              Laguna Weather Dashboard
+            </div>
+            <div style={{ fontSize: '12px', color: '#64748b' }}>
+              100% Free APIs • Real-time Data
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="container">
-        <div className="card" style={{ marginBottom: '16px', background: '#eff6ff' }}>
+      {/* Main Content */}
+      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '16px' }}>
+        {/* Info Banner */}
+        <div style={{
+          background: 'white',
+          borderRadius: '8px',
+          padding: '16px',
+          marginBottom: '16px',
+          background: '#eff6ff',
+          borderLeft: '4px solid #3b82f6'
+        }}>
           <strong>🌤️ Laguna Province Weather Monitoring</strong>
-          <div className="small" style={{ marginTop: '8px' }}>
-            Select a city to view real-time weather data from free public APIs.
+          <div style={{ fontSize: '13px', color: '#64748b', marginTop: '8px' }}>
+            Select a city to view real-time weather, air quality, and earthquake data from free public APIs.
           </div>
         </div>
 
-        <div className="grid">
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr',
+          gap: '16px',
+          marginTop: '16px'
+        }}>
           <div>
-            {/* SELECTOR */}
-            <div className="card" style={{ marginBottom: '16px' }}>
-              <label><strong>Select City:</strong></label>
+            {/* Location Selector */}
+            <div style={{
+              background: 'white',
+              borderRadius: '8px',
+              padding: '16px',
+              marginBottom: '16px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                Select Laguna City:
+              </label>
               <select
-                className="select"
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  background: 'white'
+                }}
                 value={selected.id}
                 onChange={e => setSelected(LGUS.find(g => g.id === e.target.value))}
               >
@@ -207,89 +262,143 @@ export default function Home() {
                   <option key={g.id} value={g.id}>{g.name}</option>
                 ))}
               </select>
-              <div className="small" style={{ marginTop: '8px' }}>
-                Viewing: <strong>{selected.name}</strong>
+              <div style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>
+                Currently viewing: <strong>{selected.name}</strong>
               </div>
             </div>
 
-            {/* WEATHER */}
-            <div className="card" style={{ marginBottom: '16px' }}>
-              <h3>Current Weather</h3>
+            {/* Current Weather */}
+            <div style={{
+              background: 'white',
+              borderRadius: '8px',
+              padding: '16px',
+              marginBottom: '16px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              <h3 style={{ marginTop: '0', marginBottom: '12px', color: '#1e293b' }}>
+                Current Weather
+              </h3>
               {loading ? (
-                <div className="small">Loading...</div>
+                <div style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>
+                  Loading weather data...
+                </div>
               ) : weather ? (
                 <div style={{
                   display: 'grid',
                   gridTemplateColumns: '1fr 1fr',
-                  gap: '12px',
-                  marginTop: '12px'
+                  gap: '12px'
                 }}>
-                  <div style={{ padding: '12px', background: '#fef2f2', borderRadius: '8px' }}>
-                    <div className="small">Temperature</div>
-                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#dc2626' }}>
+                  <div style={{
+                    padding: '16px',
+                    background: '#fef2f2',
+                    borderRadius: '8px',
+                    border: '1px solid #fecaca'
+                  }}>
+                    <div style={{ fontSize: '12px', color: '#dc2626' }}>Temperature</div>
+                    <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#dc2626' }}>
                       {weather.temperature}°C
                     </div>
                   </div>
-                  <div style={{ padding: '12px', background: '#eff6ff', borderRadius: '8px' }}>
-                    <div className="small">Wind Speed</div>
-                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2563eb' }}>
+                  <div style={{
+                    padding: '16px',
+                    background: '#eff6ff',
+                    borderRadius: '8px',
+                    border: '1px solid #bfdbfe'
+                  }}>
+                    <div style={{ fontSize: '12px', color: '#2563eb' }}>Wind Speed</div>
+                    <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2563eb' }}>
                       {weather.windspeed} m/s
                     </div>
+                    <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
+                      Direction: {weather.winddirection}°
+                    </div>
                   </div>
                 </div>
               ) : (
-                <div className="small">No data</div>
+                <div style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>
+                  Weather data unavailable
+                </div>
               )}
             </div>
 
-            {/* AQI */}
-            <div className="card" style={{ marginBottom: '16px' }}>
-              <h3>Air Quality</h3>
+            {/* Air Quality */}
+            <div style={{
+              background: 'white',
+              borderRadius: '8px',
+              padding: '16px',
+              marginBottom: '16px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              <h3 style={{ marginTop: '0', marginBottom: '12px', color: '#1e293b' }}>
+                Air Quality Index
+              </h3>
               {aqi !== null ? (
                 <div style={{
-                  padding: '16px',
+                  padding: '20px',
                   background: '#f8fafc',
                   borderRadius: '8px',
-                  borderLeft: `4px solid ${getAqiColor(aqi)}`,
-                  marginTop: '12px'
+                  borderLeft: `4px solid ${getAqiColor(aqi)}`
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <div style={{ fontSize: '28px', fontWeight: 'bold', color: getAqiColor(aqi) }}>
+                      <div style={{ fontSize: '32px', fontWeight: 'bold', color: getAqiColor(aqi) }}>
                         {aqi}
                       </div>
-                      <div className="small">US AQI Index</div>
+                      <div style={{ fontSize: '14px', fontWeight: '600', color: getAqiColor(aqi) }}>
+                        {getAqiLevel(aqi)}
+                      </div>
                     </div>
-                    <div className="small" style={{ textAlign: 'right' }}>
-                      Updated hourly<br/>
-                      via Open-Meteo
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '12px', color: '#64748b' }}>US AQI</div>
+                      <div style={{ fontSize: '11px', color: '#94a3b8' }}>Updated hourly</div>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="small">Loading AQI...</div>
+                <div style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>
+                  Loading air quality data...
+                </div>
               )}
             </div>
 
-            {/* FORECAST */}
-            <div className="card">
-              <h3>12-Hour Forecast</h3>
-              <div style={{ maxHeight: '200px', overflow: 'auto', marginTop: '12px' }}>
+            {/* Forecast */}
+            <div style={{
+              background: 'white',
+              borderRadius: '8px',
+              padding: '16px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              <h3 style={{ marginTop: '0', marginBottom: '12px', color: '#1e293b' }}>
+                12-Hour Forecast
+              </h3>
+              <div style={{ maxHeight: '200px', overflow: 'auto' }}>
                 {hourly.map((hour, i) => (
                   <div
                     key={hour.time}
                     style={{
                       display: 'flex',
                       justifyContent: 'space-between',
-                      padding: '8px',
-                      borderBottom: i < hourly.length - 1 ? '1px solid #e5e7eb' : 'none'
+                      alignItems: 'center',
+                      padding: '12px',
+                      borderBottom: i < hourly.length - 1 ? '1px solid #e5e7eb' : 'none',
+                      background: i === 0 ? '#f8fafc' : 'white'
                     }}
                   >
-                    <div className="small">
-                      {i === 0 ? 'Now' : new Date(hour.time).toLocaleTimeString([], { hour: '2-digit' })}
+                    <div>
+                      <div style={{ fontWeight: '600' }}>
+                        {i === 0 ? 'Now' : new Date(hour.time).toLocaleTimeString([], { hour: '2-digit', hour12: false })}
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#94a3b8' }}>
+                        {new Date(hour.time).toLocaleDateString([], { weekday: 'short' })}
+                      </div>
                     </div>
-                    <div className="small">
-                      {hour.temp}°C • 💧 {hour.prec}mm
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#3b82f6' }}>
+                        {hour.temp}°C
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#64748b' }}>
+                        💧 {hour.prec} mm
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -297,69 +406,145 @@ export default function Home() {
             </div>
           </div>
 
-          <aside>
-            {/* MAP */}
-            <div className="card">
-              <h3>Laguna Map</h3>
-              <div style={{ height: '300px', marginTop: '12px' }}>
-                <MapComponent 
-                  center={{ lat: selected.lat, lon: selected.lon }} 
-                  cities={LGUS} 
-                  quakes={quakes} 
-                  landmarks={LANDMARKS}
-                />
+          {/* Sidebar */}
+          <div>
+            {/* Map */}
+            <div style={{
+              background: 'white',
+              borderRadius: '8px',
+              padding: '16px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              <h3 style={{ marginTop: '0', marginBottom: '12px', color: '#1e293b' }}>
+                Laguna Map
+              </h3>
+              <SimpleMap center={selected} selectedName={selected.name} />
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '12px',
+                marginTop: '12px',
+                fontSize: '11px',
+                color: '#64748b'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <div style={{ width: '8px', height: '8px', background: '#3b82f6', borderRadius: '50%' }}></div>
+                  <span>Selected City</span>
+                </div>
               </div>
             </div>
 
-            {/* EARTHQUAKES */}
-            <div className="card" style={{ marginTop: '16px' }}>
-              <h3>Recent Earthquakes</h3>
-              <div style={{ maxHeight: '200px', overflow: 'auto', marginTop: '12px' }}>
+            {/* Earthquakes */}
+            <div style={{
+              background: 'white',
+              borderRadius: '8px',
+              padding: '16px',
+              marginTop: '16px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              <h3 style={{ marginTop: '0', marginBottom: '12px', color: '#1e293b' }}>
+                Recent Earthquakes
+              </h3>
+              <div style={{ maxHeight: '200px', overflow: 'auto' }}>
                 {quakes.length > 0 ? (
                   quakes.map(quake => (
                     <div
                       key={quake.id}
                       style={{
-                        padding: '8px',
-                        borderBottom: '1px solid #e5e7eb'
+                        padding: '12px',
+                        borderBottom: '1px solid #e5e7eb',
+                        background: quake.mag >= 5 ? '#fef2f2' : 
+                                   quake.mag >= 4 ? '#fffbeb' : '#f0fdf4'
                       }}
                     >
-                      <div className="small">
-                        <strong>M{quake.mag}</strong> • {new Date(quake.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                      <div className="small" style={{ color: '#6b7280' }}>
-                        {quake.place}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontWeight: 'bold' }}>M{quake.mag?.toFixed(1)}</span>
+                            <span style={{
+                              fontSize: '10px',
+                              padding: '2px 6px',
+                              background: quake.mag >= 5 ? '#fee2e2' : 
+                                         quake.mag >= 4 ? '#fef3c7' : '#d1fae5',
+                              color: quake.mag >= 5 ? '#dc2626' : 
+                                     quake.mag >= 4 ? '#d97706' : '#059669',
+                              borderRadius: '12px'
+                            }}>
+                              {quake.mag >= 5 ? 'Strong' : quake.mag >= 4 ? 'Moderate' : 'Light'}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                            {new Date(quake.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="small" style={{ padding: '12px', textAlign: 'center' }}>
-                    No recent earthquakes
+                  <div style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>
+                    No recent earthquakes in Laguna area
                   </div>
                 )}
               </div>
             </div>
 
-            {/* INFO */}
-            <div className="card" style={{ marginTop: '16px', background: '#f0fdf4' }}>
-              <h3>🆓 Free APIs</h3>
-              <div className="small" style={{ marginTop: '8px' }}>
-                • Open-Meteo: Weather<br/>
-                • USGS: Earthquakes<br/>
-                • Air Quality API<br/>
-                <div style={{ marginTop: '8px', padding: '8px', background: 'white', borderRadius: '4px' }}>
-                  <strong>No API keys needed!</strong>
+            {/* Free APIs Info */}
+            <div style={{
+              background: '#f0fdf4',
+              borderRadius: '8px',
+              padding: '16px',
+              marginTop: '16px',
+              border: '1px solid #bbf7d0'
+            }}>
+              <h3 style={{ marginTop: '0', marginBottom: '12px', color: '#1e293b' }}>
+                🆓 Free APIs Used
+              </h3>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '8px',
+                fontSize: '12px'
+              }}>
+                <div style={{ padding: '8px', background: 'white', borderRadius: '6px', textAlign: 'center' }}>
+                  <div style={{ fontWeight: '600', color: '#3b82f6' }}>Open-Meteo</div>
+                  <div style={{ color: '#64748b' }}>Weather Data</div>
+                </div>
+                <div style={{ padding: '8px', background: 'white', borderRadius: '6px', textAlign: 'center' }}>
+                  <div style={{ fontWeight: '600', color: '#3b82f6' }}>USGS</div>
+                  <div style={{ color: '#64748b' }}>Earthquakes</div>
                 </div>
               </div>
+              <div style={{
+                marginTop: '12px',
+                padding: '8px',
+                background: '#dcfce7',
+                borderRadius: '6px',
+                textAlign: 'center',
+                fontSize: '11px',
+                color: '#059669'
+              }}>
+                <strong>100% FREE</strong> • No API Keys Required
+              </div>
             </div>
-          </aside>
+          </div>
         </div>
       </main>
 
-      <footer className="footer">
-        <div>Laguna Weather Dashboard • 100% Free • Real-time Data</div>
-        <div className="small" style={{ marginTop: '4px' }}>
-          Updates automatically • Mobile optimized
+      {/* Footer */}
+      <footer style={{
+        maxWidth: '1200px',
+        margin: '24px auto',
+        padding: '16px',
+        textAlign: 'center',
+        color: '#64748b',
+        fontSize: '12px',
+        borderTop: '1px solid #e2e8f0'
+      }}>
+        <div style={{ fontWeight: '600', marginBottom: '4px' }}>
+          Laguna Weather Dashboard • 100% Free APIs • Real-time Data
+        </div>
+        <div>
+          Data updates automatically • No API keys required • Made for Laguna Province
         </div>
       </footer>
     </div>
