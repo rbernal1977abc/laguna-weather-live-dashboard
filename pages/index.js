@@ -2,9 +2,8 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { format, parseISO } from 'date-fns';
 
-// Clean CSS in JS styles - organized and readable
+// Clean CSS in JS styles
 const styles = {
-  // Base styles
   container: {
     minHeight: '100vh',
     backgroundColor: '#0f172a',
@@ -14,14 +13,12 @@ const styles = {
     lineHeight: '1.5',
   },
   
-  // Layout
   contentMaxWidth: {
     maxWidth: '1200px',
     margin: '0 auto',
     padding: '0 16px',
   },
   
-  // Cards
   card: {
     backgroundColor: 'rgba(30, 41, 59, 0.7)',
     borderRadius: '12px',
@@ -31,7 +28,6 @@ const styles = {
     backdropFilter: 'blur(10px)',
   },
   
-  // Typography
   title1: {
     fontSize: '24px',
     fontWeight: '700',
@@ -65,7 +61,6 @@ const styles = {
     color: '#94a3b8',
   },
   
-  // Interactive elements
   select: {
     width: '100%',
     padding: '12px 16px',
@@ -85,14 +80,6 @@ const styles = {
     padding: '12px',
   },
   
-  // Grid system
-  grid: {
-    mobile: '1fr',
-    tablet: 'repeat(2, 1fr)',
-    desktop: 'repeat(3, 1fr)',
-  },
-  
-  // Colors for different data types
   colors: {
     temperature: { bg: 'rgba(220, 38, 38, 0.1)', border: 'rgba(220, 38, 38, 0.2)', text: '#fca5a5' },
     wind: { bg: 'rgba(37, 99, 235, 0.1)', border: 'rgba(37, 99, 235, 0.2)', text: '#93c5fd' },
@@ -100,10 +87,11 @@ const styles = {
     good: { bg: 'rgba(21, 128, 61, 0.1)', border: 'rgba(21, 128, 61, 0.2)', text: '#86efac' },
     warning: { bg: 'rgba(202, 138, 4, 0.1)', border: 'rgba(202, 138, 4, 0.2)', text: '#fde047' },
     danger: { bg: 'rgba(220, 38, 38, 0.1)', border: 'rgba(220, 38, 38, 0.2)', text: '#fca5a5' },
+    money: { bg: 'rgba(234, 179, 8, 0.2)', border: 'rgba(234, 179, 8, 0.5)', text: '#fbbf24' },
   },
 };
 
-// Laguna Cities - Clean data structure
+// Laguna Cities
 const CITIES = [
   { id: 'calamba', name: 'Calamba City', lat: 14.2117, lon: 121.1663, population: '539,671', type: 'City' },
   { id: 'santa_cruz', name: 'Santa Cruz (Capital)', lat: 14.2784, lon: 121.4163, population: '129,965', type: 'Capital' },
@@ -113,23 +101,166 @@ const CITIES = [
   { id: 'san_pedro', name: 'San Pedro City', lat: 14.3583, lon: 121.0583, population: '326,001', type: 'City' },
 ];
 
-// Landmarks - Clean data structure
 const LANDMARKS = [
   { id: 'makiling', name: 'Mount Makiling', type: 'volcano', elevation: '1,090m', status: 'Inactive', icon: '🌋' },
   { id: 'laguna_lake', name: 'Laguna de Bay', type: 'lake', area: '949 km²', depth: '2.8m', icon: '🏞️' },
   { id: 'pagsanjan_falls', name: 'Pagsanjan Falls', type: 'waterfall', height: '120m', status: 'Tourist Spot', icon: '💧' },
 ];
 
-// Main Component - Clean and organized
+// SHOW ME THE MONEY Component
+function ShowMeTheMoney({ onClose }) {
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(15, 23, 42, 0.95)',
+      zIndex: 9999,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px',
+      animation: 'fadeIn 0.5s ease-out',
+    }}>
+      <div style={{
+        backgroundColor: 'rgba(30, 41, 59, 0.9)',
+        borderRadius: '20px',
+        padding: '40px 30px',
+        maxWidth: '500px',
+        width: '100%',
+        border: '3px solid #fbbf24',
+        boxShadow: '0 20px 60px rgba(251, 191, 36, 0.3)',
+        textAlign: 'center',
+        animation: 'pulse 2s infinite',
+      }}>
+        {/* Money Rain Animation */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '100%',
+          overflow: 'hidden',
+          pointerEvents: 'none',
+        }}>
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              style={{
+                position: 'absolute',
+                fontSize: '24px',
+                top: '-30px',
+                left: `${Math.random() * 100}%`,
+                animation: `fall ${Math.random() * 3 + 2}s linear infinite`,
+                animationDelay: `${Math.random() * 2}s`,
+              }}
+            >
+              💰
+            </div>
+          ))}
+        </div>
+
+        <div style={{
+          fontSize: '80px',
+          marginBottom: '20px',
+          animation: 'bounce 1s infinite',
+        }}>
+          💸
+        </div>
+        
+        <div style={{
+          fontSize: '48px',
+          fontWeight: '900',
+          marginBottom: '20px',
+          background: 'linear-gradient(45deg, #fbbf24, #f59e0b, #d97706)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          textShadow: '0 0 30px rgba(251, 191, 36, 0.5)',
+        }}>
+          SHOW ME THE MONEY!
+        </div>
+        
+        <div style={{
+          fontSize: '24px',
+          fontWeight: '700',
+          color: '#fde047',
+          marginBottom: '30px',
+          animation: 'glow 2s infinite alternate',
+        }}>
+          💰 Real-Time Weather = Real Business Value 💰
+        </div>
+        
+        <div style={{
+          backgroundColor: 'rgba(251, 191, 36, 0.1)',
+          borderRadius: '12px',
+          padding: '20px',
+          marginBottom: '30px',
+          border: '2px solid #fbbf24',
+        }}>
+          <div style={{ fontSize: '18px', fontWeight: '600', color: '#fde047', marginBottom: '10px' }}>
+            This Dashboard Generates:
+          </div>
+          <div style={{ ...styles.bodyText, color: '#fef3c7' }}>
+            • Accurate weather data for business decisions<br/>
+            • Live alerts for disaster preparedness<br/>
+            • Air quality monitoring for public health<br/>
+            • Tourism & agriculture insights<br/>
+            • All in REAL-TIME!
+          </div>
+        </div>
+        
+        <button
+          onClick={onClose}
+          style={{
+            backgroundColor: '#fbbf24',
+            color: '#0f172a',
+            border: 'none',
+            borderRadius: '12px',
+            padding: '16px 40px',
+            fontSize: '20px',
+            fontWeight: '700',
+            cursor: 'pointer',
+            transition: 'all 0.3s',
+            boxShadow: '0 8px 20px rgba(251, 191, 36, 0.4)',
+          }}
+          onMouseOver={(e) => {
+            e.target.style.transform = 'scale(1.05)';
+            e.target.style.boxShadow = '0 12px 30px rgba(251, 191, 36, 0.6)';
+          }}
+          onMouseOut={(e) => {
+            e.target.style.transform = 'scale(1)';
+            e.target.style.boxShadow = '0 8px 20px rgba(251, 191, 36, 0.4)';
+          }}
+        >
+          ENTER WEALTH DASHBOARD →
+        </button>
+        
+        <div style={{
+          marginTop: '30px',
+          fontSize: '14px',
+          color: '#fde047',
+          opacity: 0.8,
+        }}>
+          Powered by DIMAX • Secured by RP8 • 💰 Show me the money! 💰
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main Dashboard Component
 export default function LagunaWeatherDashboard() {
-  // State management - clear and organized
   const [selectedCity, setSelectedCity] = useState(CITIES[0]);
   const [weatherData, setWeatherData] = useState(null);
   const [hourlyForecast, setHourlyForecast] = useState([]);
   const [airQuality, setAirQuality] = useState(null);
   const [earthquakes, setEarthquakes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+  const [showMoney, setShowMoney] = useState(true); // Set to true to show on first load
+
   // Fetch weather data
   useEffect(() => {
     const fetchWeather = async () => {
@@ -140,7 +271,6 @@ export default function LagunaWeatherDashboard() {
         
         setWeatherData(response.data.current_weather);
         
-        // Process hourly data
         if (response.data.hourly) {
           const times = response.data.hourly.time.slice(0, 12);
           const forecast = times.map((time, index) => ({
@@ -210,7 +340,6 @@ export default function LagunaWeatherDashboard() {
     return () => clearInterval(interval);
   }, []);
   
-  // Helper functions
   const getAqiLevel = (aqi) => {
     if (aqi <= 50) return { level: 'Good', color: styles.colors.good };
     if (aqi <= 100) return { level: 'Moderate', color: styles.colors.warning };
@@ -222,7 +351,11 @@ export default function LagunaWeatherDashboard() {
     return format(new Date(timestamp), 'h:mm a');
   };
   
-  // Render loading state
+  // Show money screen on first load
+  if (showMoney) {
+    return <ShowMeTheMoney onClose={() => setShowMoney(false)} />;
+  }
+  
   if (isLoading) {
     return (
       <div style={styles.container}>
@@ -238,7 +371,7 @@ export default function LagunaWeatherDashboard() {
   return (
     <div style={styles.container}>
       
-      {/* Header - Clean and simple */}
+      {/* Header */}
       <header style={{
         backgroundColor: '#1e293b',
         borderBottom: '1px solid #334155',
@@ -282,7 +415,7 @@ export default function LagunaWeatherDashboard() {
       <main style={{ padding: '20px 0' }}>
         <div style={styles.contentMaxWidth}>
           
-          {/* City Selection Card */}
+          {/* City Selection */}
           <div style={styles.card}>
             <h2 style={styles.title2}>Select City for Weather Data</h2>
             
@@ -319,7 +452,7 @@ export default function LagunaWeatherDashboard() {
             </div>
           </div>
           
-          {/* Current Weather Card */}
+          {/* Current Weather */}
           {weatherData && (
             <div style={styles.card}>
               <h2 style={styles.title2}>Current Weather in {selectedCity.name}</h2>
@@ -330,7 +463,6 @@ export default function LagunaWeatherDashboard() {
                 gap: '16px',
                 marginBottom: '20px',
               }}>
-                {/* Temperature */}
                 <div style={{
                   backgroundColor: styles.colors.temperature.bg,
                   border: `1px solid ${styles.colors.temperature.border}`,
@@ -348,7 +480,6 @@ export default function LagunaWeatherDashboard() {
                   </div>
                 </div>
                 
-                {/* Wind */}
                 <div style={{
                   backgroundColor: styles.colors.wind.bg,
                   border: `1px solid ${styles.colors.wind.border}`,
@@ -370,7 +501,6 @@ export default function LagunaWeatherDashboard() {
                 </div>
               </div>
               
-              {/* Additional Metrics */}
               <div style={{ 
                 display: 'grid', 
                 gridTemplateColumns: 'repeat(2, 1fr)',
@@ -470,7 +600,7 @@ export default function LagunaWeatherDashboard() {
             </div>
           )}
           
-          {/* Two-column layout for desktop */}
+          {/* Two-column layout */}
           <div style={{ 
             display: 'grid', 
             gridTemplateColumns: '1fr',
@@ -659,7 +789,7 @@ export default function LagunaWeatherDashboard() {
         </div>
       </footer>
       
-      {/* Global Styles */}
+      {/* Global Styles with Animations */}
       <style jsx>{`
         /* Smooth scrolling */
         html {
@@ -686,9 +816,35 @@ export default function LagunaWeatherDashboard() {
           background: #64748b;
         }
         
+        /* SHOW ME THE MONEY Animations */
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        
+        @keyframes pulse {
+          0% { transform: scale(1); box-shadow: 0 20px 60px rgba(251, 191, 36, 0.3); }
+          50% { transform: scale(1.02); box-shadow: 0 25px 80px rgba(251, 191, 36, 0.5); }
+          100% { transform: scale(1); box-shadow: 0 20px 60px rgba(251, 191, 36, 0.3); }
+        }
+        
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes glow {
+          from { text-shadow: 0 0 10px rgba(251, 191, 36, 0.7); }
+          to { text-shadow: 0 0 20px rgba(251, 191, 36, 1), 0 0 30px rgba(251, 191, 36, 0.8); }
+        }
+        
+        @keyframes fall {
+          0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+        
         /* Responsive breakpoints */
         @media (min-width: 640px) {
-          /* Tablet styles */
           .content-max-width {
             padding: 0 24px;
           }
@@ -699,7 +855,6 @@ export default function LagunaWeatherDashboard() {
         }
         
         @media (min-width: 768px) {
-          /* Small desktop styles */
           .grid-2-columns {
             grid-template-columns: repeat(2, 1fr);
           }
@@ -710,7 +865,6 @@ export default function LagunaWeatherDashboard() {
         }
         
         @media (min-width: 1024px) {
-          /* Desktop styles */
           .main-grid {
             grid-template-columns: 2fr 1fr;
           }
@@ -725,7 +879,6 @@ export default function LagunaWeatherDashboard() {
         }
         
         @media (min-width: 1280px) {
-          /* Large desktop styles */
           .content-max-width {
             padding: 0 32px;
           }
@@ -735,13 +888,6 @@ export default function LagunaWeatherDashboard() {
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
-        }
-        
-        /* Print styles */
-        @media print {
-          .no-print {
-            display: none;
-          }
         }
       `}</style>
     </div>
