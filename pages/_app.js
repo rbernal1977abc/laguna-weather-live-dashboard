@@ -1,4 +1,5 @@
-import '../styles.css'
+// Remove the "../" since styles.css is in the root
+import '../../styles.css'
 
 export default function App({ Component, pageProps }) {
   return <Component {...pageProps} />
