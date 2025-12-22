@@ -1002,8 +1002,7 @@ export default function LagunaWeatherDashboard() {
             color: '#64748b',
             textAlign: 'center'
           }}>
-            © {new Date().getFullYear()} Laguna Province Meteorological System. 
-            All data provided for informational purposes. System version 2.4.1
+            © {new Date().getFullYear()} © 2025 by DIMAX. Powered and secured by RP8.
           </div>
         </div>
       </footer>
