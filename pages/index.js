@@ -1711,7 +1711,7 @@ function LagunaWeatherDashboard() {
               © {new Date().getFullYear()} by DIMAX. Powered and secured by RP8.
             </div>
             <div style={{ fontSize: '13px', color: '#475569' }}>
-              All data provided for informational purposes. Weather data from multiple free public sources.
+              All data provided for informational purposes. Weather data from multiple public sources.
               Laguna-specific calculations and advisories based on local conditions.
             </div>
           </div>
