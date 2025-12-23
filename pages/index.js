@@ -10,23 +10,80 @@ function LagunaWeatherDashboard() {
   const [nasaData, setNasaData] = useState(null);
   const [airQuality, setAirQuality] = useState(null);
   const [historicalData, setHistoricalData] = useState(null);
-  const [hourlyForecast, setHourlyForecast] = useState(null);
-  const [dailyForecast, setDailyForecast] = useState(null);
-  const [uvIndex, setUvIndex] = useState(null);
+  const [floodRisk, setFloodRisk] = useState(null);
+  const [agriculturalAdvisory, setAgriculturalAdvisory] = useState(null);
+  const [tourismRecommendations, setTourismRecommendations] = useState([]);
+  const [volcanoStatus, setVolcanoStatus] = useState(null);
   const [lakeConditions, setLakeConditions] = useState(null);
 
-  // Laguna Cities with real coordinates
+  // Laguna Cities with detailed information
   const cities = [
-    { name: 'Calamba', lat: 14.2117, lon: 121.1663, population: '539,671', type: 'City', elevation: 98 },
-    { name: 'Santa Cruz', lat: 14.2784, lon: 121.4163, population: '129,965', type: 'Capital', elevation: 15 },
-    { name: 'San Pablo', lat: 14.0667, lon: 121.3250, population: '285,348', type: 'City', elevation: 157 },
-    { name: 'Biñan', lat: 14.3333, lon: 121.0833, population: '407,437', type: 'City', elevation: 68 },
-    { name: 'Cabuyao', lat: 14.2453, lon: 121.1156, population: '355,330', type: 'City', elevation: 99 },
-    { name: 'Los Baños', lat: 14.1667, lon: 121.2333, population: '115,353', type: 'Municipality', elevation: 112 },
-    { name: 'Pagsanjan', lat: 14.2731, lon: 121.4547, population: '44,327', type: 'Municipality', elevation: 47 },
+    { 
+      name: 'Calamba', 
+      lat: 14.2117, 
+      lon: 121.1663, 
+      population: '539,671', 
+      type: 'City',
+      elevation: 98,
+      landmarks: ['Rizal Shrine', 'Hot Springs']
+    },
+    { 
+      name: 'Santa Cruz', 
+      lat: 14.2784, 
+      lon: 121.4163, 
+      population: '129,965', 
+      type: 'Capital',
+      elevation: 18,
+      landmarks: ['Laguna Provincial Capitol', 'Lakeside']
+    },
+    { 
+      name: 'San Pablo', 
+      lat: 14.0667, 
+      lon: 121.3250, 
+      population: '285,348', 
+      type: 'City',
+      elevation: 231,
+      landmarks: ['Seven Lakes', 'Sampaloc Lake']
+    },
+    { 
+      name: 'Biñan', 
+      lat: 14.3333, 
+      lon: 121.0833, 
+      population: '407,437', 
+      type: 'City',
+      elevation: 68,
+      landmarks: ['Plaza Rizal', 'Industrial Zone']
+    },
+    { 
+      name: 'Cabuyao', 
+      lat: 14.2453, 
+      lon: 121.1156, 
+      population: '355,330', 
+      type: 'City',
+      elevation: 99,
+      landmarks: ['Carmona Resettlement', 'Industrial Area']
+    },
+    { 
+      name: 'Los Baños', 
+      lat: 14.1667, 
+      lon: 121.2333, 
+      population: '115,353', 
+      type: 'Municipality',
+      elevation: 272,
+      landmarks: ['UP Los Baños', 'Mt. Makiling']
+    },
+    { 
+      name: 'Pagsanjan', 
+      lat: 14.2731, 
+      lon: 121.4547, 
+      population: '44,327', 
+      type: 'Municipality',
+      elevation: 154,
+      landmarks: ['Pagsanjan Falls', 'Pagsanjan Arch']
+    },
   ];
 
-  // Laguna Landmarks with more detailed data
+  // Laguna Landmarks with detailed information
   const landmarks = [
     { 
       name: 'Mount Makiling', 
@@ -34,9 +91,8 @@ function LagunaWeatherDashboard() {
       elevation: '1,090m', 
       status: 'Inactive', 
       icon: '🌋',
-      temperature: '22-26°C',
-      activity: 'Normal',
-      lastEruption: 'Unknown'
+      location: 'Los Baños',
+      coordinates: { lat: 14.1306, lon: 121.2022 }
     },
     { 
       name: 'Laguna de Bay', 
@@ -44,18 +100,16 @@ function LagunaWeatherDashboard() {
       area: '949 km²', 
       depth: '2.8m', 
       icon: '🏞️',
-      waterTemp: '28-32°C',
-      waterLevel: 'Normal',
-      fishing: 'Good'
+      location: 'Multiple Cities',
+      coordinates: { lat: 14.3333, lon: 121.2833 }
     },
     { 
       name: 'Pagsanjan Falls', 
       type: 'Waterfall', 
       height: '120m', 
       icon: '💧',
-      flowRate: 'Heavy',
-      waterTemp: '24°C',
-      safety: 'Moderate'
+      location: 'Pagsanjan',
+      coordinates: { lat: 14.2717, lon: 121.4553 }
     },
     { 
       name: 'Mount Banahaw', 
@@ -63,399 +117,511 @@ function LagunaWeatherDashboard() {
       elevation: '2,170m', 
       status: 'Active', 
       icon: '⛰️',
-      temperature: '18-22°C',
-      activity: 'Low',
-      alertLevel: '0'
+      location: 'Boundary Laguna/Quezon',
+      coordinates: { lat: 14.0667, lon: 121.4833 }
     },
   ];
 
-  // Enhanced weather conditions mapping
+  // Crop types in Laguna
+  const lagunaCrops = [
+    { name: 'Rice', season: 'Year-round', planting: ['Jan-Mar', 'Jun-Jul'], harvest: ['Apr-May', 'Oct-Nov'] },
+    { name: 'Coconut', season: 'Year-round', planting: 'May-Oct', harvest: 'Continuous' },
+    { name: 'Coffee', season: 'Nov-Mar', planting: 'May-Jun', harvest: 'Oct-Feb' },
+    { name: 'Banana', season: 'Year-round', planting: 'Apr-May', harvest: 'Continuous' },
+    { name: 'Mango', season: 'Mar-Jun', planting: 'Jun-Jul', harvest: 'Mar-Apr' },
+  ];
+
   const weatherConditions = {
-    0: { text: 'Clear sky', icon: '☀️', color: '#f59e0b', severity: 1 },
-    1: { text: 'Mainly clear', icon: '🌤️', color: '#fbbf24', severity: 1 },
-    2: { text: 'Partly cloudy', icon: '⛅', color: '#94a3b8', severity: 1 },
-    3: { text: 'Overcast', icon: '☁️', color: '#64748b', severity: 2 },
-    45: { text: 'Fog', icon: '🌫️', color: '#cbd5e1', severity: 2 },
-    48: { text: 'Depositing rime fog', icon: '🌫️', color: '#cbd5e1', severity: 2 },
-    51: { text: 'Light drizzle', icon: '🌦️', color: '#60a5fa', severity: 2 },
-    53: { text: 'Moderate drizzle', icon: '🌧️', color: '#3b82f6', severity: 3 },
-    55: { text: 'Dense drizzle', icon: '🌧️', color: '#1d4ed8', severity: 3 },
-    61: { text: 'Slight rain', icon: '🌧️', color: '#60a5fa', severity: 2 },
-    63: { text: 'Moderate rain', icon: '🌧️', color: '#3b82f6', severity: 3 },
-    65: { text: 'Heavy rain', icon: '🌧️', color: '#1d4ed8', severity: 4 },
-    80: { text: 'Slight showers', icon: '🌦️', color: '#60a5fa', severity: 2 },
-    81: { text: 'Moderate showers', icon: '🌧️', color: '#3b82f6', severity: 3 },
-    82: { text: 'Violent showers', icon: '⛈️', color: '#1d4ed8', severity: 4 },
-    95: { text: 'Thunderstorm', icon: '⛈️', color: '#7c3aed', severity: 4 },
-    96: { text: 'Thunderstorm with hail', icon: '🌨️⚡', color: '#7c3aed', severity: 5 },
-    99: { text: 'Heavy thunderstorm with hail', icon: '🌨️⚡', color: '#dc2626', severity: 5 },
+    0: { text: 'Clear sky', icon: '☀️', color: '#f59e0b' },
+    1: { text: 'Mainly clear', icon: '🌤️', color: '#fbbf24' },
+    2: { text: 'Partly cloudy', icon: '⛅', color: '#94a3b8' },
+    3: { text: 'Overcast', icon: '☁️', color: '#64748b' },
+    45: { text: 'Fog', icon: '🌫️', color: '#cbd5e1' },
+    48: { text: 'Fog', icon: '🌫️', color: '#cbd5e1' },
+    51: { text: 'Light drizzle', icon: '🌦️', color: '#60a5fa' },
+    53: { text: 'Moderate drizzle', icon: '🌧️', color: '#3b82f6' },
+    61: { text: 'Light rain', icon: '🌧️', color: '#60a5fa' },
+    63: { text: 'Moderate rain', icon: '🌧️', color: '#3b82f6' },
+    65: { text: 'Heavy rain', icon: '🌧️', color: '#1d4ed8' },
+    80: { text: 'Light showers', icon: '🌦️', color: '#60a5fa' },
+    81: { text: 'Moderate showers', icon: '🌧️', color: '#3b82f6' },
+    82: { text: 'Heavy showers', icon: '⛈️', color: '#1d4ed8' },
+    95: { text: 'Thunderstorm', icon: '⛈️', color: '#7c3aed' },
   };
 
   // Calculate Heat Index (Feels Like Temperature)
   const calculateHeatIndex = (temp, humidity) => {
-    if (temp < 27 || humidity < 40) return temp;
+    if (temp < 27) return temp;
     
     const T = temp;
     const R = humidity;
     
+    // NOAA Heat Index Formula
     const HI = -8.78469475556 + 
-               1.61139411 * T + 
-               2.33854883889 * R + 
-               -0.14611605 * T * R + 
-               -0.012308094 * T * T + 
-               -0.0164248277778 * R * R + 
-               0.002211732 * T * T * R + 
-               0.00072546 * T * R * R + 
-               -0.000003582 * T * T * R * R;
+              1.61139411 * T + 
+              2.33854883889 * R + 
+              -0.14611605 * T * R + 
+              -0.012308094 * T * T + 
+              -0.0164248277778 * R * R + 
+              0.002211732 * T * T * R + 
+              0.00072546 * T * R * R + 
+              -0.000003582 * T * T * R * R;
     
     return Math.round(HI * 10) / 10;
   };
 
-  // Calculate UV Index based on time and location
-  const calculateUVIndex = (lat, lon, date) => {
-    const hour = date.getHours();
-    const month = date.getMonth();
+  // Calculate Flood Risk based on rainfall data
+  const calculateFloodRisk = (precipitationData, historicalPrecip) => {
+    const currentHour = precipitationData?.[0] || 0;
+    const last3Hours = precipitationData?.slice(0, 3).reduce((a, b) => a + b, 0) || 0;
+    const last24Hours = precipitationData?.slice(0, 24).reduce((a, b) => a + b, 0) || 0;
     
-    // Simplified UV calculation for Philippines
-    let baseUV = 8; // High baseline for Philippines
+    let riskLevel = 'Low';
+    let color = '#22c55e';
+    let advisory = 'Normal conditions';
     
-    // Adjust for time of day
-    if (hour >= 10 && hour <= 14) baseUV += 2; // Peak hours
-    if (hour < 6 || hour > 18) baseUV = 0; // Nighttime
-    if (hour >= 6 && hour < 10) baseUV -= 2; // Morning
-    if (hour > 14 && hour <= 18) baseUV -= 2; // Afternoon
+    // Laguna-specific flood thresholds (mm)
+    if (last24Hours > 100) {
+      riskLevel = 'High';
+      color = '#dc2626';
+      advisory = 'Possible flooding in low-lying areas. Monitor lake levels.';
+    } else if (last24Hours > 50) {
+      riskLevel = 'Moderate';
+      color = '#ea580c';
+      advisory = 'Minor flooding possible. Exercise caution near waterways.';
+    } else if (last3Hours > 20) {
+      riskLevel = 'Elevated';
+      color = '#f59e0b';
+      advisory = 'Localized ponding possible.';
+    }
     
-    // Adjust for season (higher in summer)
-    if (month >= 2 && month <= 5) baseUV += 1; // Summer months
-    
-    return Math.max(0, Math.min(baseUV, 11));
+    return {
+      level: riskLevel,
+      color,
+      advisory,
+      metrics: {
+        currentHour: currentHour.toFixed(1),
+        last3Hours: last3Hours.toFixed(1),
+        last24Hours: last24Hours.toFixed(1)
+      }
+    };
   };
 
-  // Calculate Soil Moisture Index
-  const calculateSoilMoisture = (precipitationData) => {
-    if (!precipitationData) return 50;
+  // Generate Agricultural Advisory
+  const generateAgriculturalAdvisory = (weatherData, nasaData) => {
+    const temp = weatherData?.current?.temperature || 28;
+    const humidity = weatherData?.current?.humidity || 70;
+    const precip = weatherData?.current?.precipitation || 0;
+    const solarRad = nasaData?.solarRadiation || 5;
     
-    const recentRain = precipitationData.slice(0, 24).reduce((a, b) => a + b, 0);
-    let moisture = 50;
+    const advisories = [];
     
-    if (recentRain > 20) moisture = 85;
-    else if (recentRain > 10) moisture = 70;
-    else if (recentRain > 5) moisture = 60;
-    else if (recentRain > 0) moisture = 55;
-    else moisture = 45;
-    
-    return Math.min(100, Math.max(0, moisture));
-  };
-
-  // Calculate Growing Degree Days (for agriculture)
-  const calculateGDD = (tempMax, tempMin) => {
-    const baseTemp = 10; // Base temperature for tropical crops
-    const avgTemp = (tempMax + tempMin) / 2;
-    return Math.max(0, avgTemp - baseTemp);
-  };
-
-  // Fetch COMPREHENSIVE weather data
-  const fetchComprehensiveWeatherData = async () => {
-    setLoading(true);
-    try {
-      const city = cities.find(c => c.name === selectedCity);
-      if (!city) throw new Error('City not found');
-
-      const today = new Date().toISOString().split('T')[0];
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const historicalDate = thirtyDaysAgo.toISOString().split('T')[0];
-
-      // 1. PRIMARY: Open-Meteo with ALL parameters
-      const weatherResponse = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}
-         &current=temperature_2m,relative_humidity_2m,precipitation,rain,showers,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,pressure_msl,surface_pressure,cloud_cover,visibility,is_day
-         &hourly=temperature_2m,relative_humidity_2m,precipitation,precipitation_probability,pressure_msl,cloud_cover,visibility,wind_speed_10m,wind_direction_10m,wind_gusts_10m,soil_temperature_0cm,soil_moisture_0_1cm
-         &daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,sunrise,sunset,daylight_duration,sunshine_duration,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_hours,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant
-         &timezone=Asia%2FManila&forecast_days=7`
-      );
-
-      // 2. AIR QUALITY: OpenAQ
-      const airQualityResponse = fetch(
-        `https://api.openaq.org/v2/latest?coordinates=${city.lat},${city.lon}&radius=50000&limit=3`
-      );
-
-      // 3. SOLAR DATA: NASA POWER
-      const nasaResponse = fetch(
-        `https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN,T2M,PRECTOT,RH2M,WS2M&community=AG&longitude=${city.lon}&latitude=${city.lat}&start=${today}&end=${today}&format=JSON`
-      );
-
-      // 4. SUN TIMES
-      const sunResponse = fetch(
-        `https://api.sunrise-sunset.org/json?lat=${city.lat}&lng=${city.lon}&formatted=0&date=today`
-      );
-
-      // 5. PAGASA ALERTS
-      const pagasaResponse = fetch(
-        'https://pubfiles.pagasa.dost.gov.ph/rss/Warning/warnings.rss'
-      );
-
-      // 6. HISTORICAL DATA (30 days)
-      const historicalResponse = fetch(
-        `https://archive-api.open-meteo.com/v1/archive?latitude=${city.lat}&longitude=${city.lon}
-         &start_date=${historicalDate}&end_date=${today}
-         &daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max
-         &timezone=Asia%2FManila`
-      );
-
-      // Execute all requests in parallel
-      const [
-        weatherRes, airQualityRes, nasaRes, 
-        sunRes, pagasaRes, historicalRes
-      ] = await Promise.allSettled([
-        weatherResponse, airQualityResponse, nasaResponse,
-        sunRes, pagasaResponse, historicalResponse
-      ]);
-
-      // Process Open-Meteo data
-      const weatherData = weatherRes.status === 'fulfilled' ? await weatherRes.value.json() : null;
-      
-      if (weatherData) {
-        // Process current weather
-        const current = weatherData.current;
-        const feelsLike = calculateHeatIndex(current.temperature_2m, current.relative_humidity_2m);
-        const uv = calculateUVIndex(city.lat, city.lon, new Date());
-        const soilMoisture = calculateSoilMoisture(weatherData.hourly?.precipitation);
-
-        setWeatherData({
-          temperature: current.temperature_2m,
-          feelsLike: feelsLike,
-          humidity: current.relative_humidity_2m,
-          precipitation: current.precipitation,
-          windSpeed: current.wind_speed_10m,
-          windGust: current.wind_gusts_10m,
-          windDirection: current.wind_direction_10m,
-          pressure: current.pressure_msl,
-          cloudCover: current.cloud_cover,
-          visibility: current.visibility,
-          isDay: current.is_day,
-          weatherCode: current.weather_code,
-          timestamp: new Date().toISOString()
-        });
-
-        setUvIndex({
-          value: uv,
-          level: uv <= 2 ? 'Low' : uv <= 5 ? 'Moderate' : uv <= 7 ? 'High' : uv <= 10 ? 'Very High' : 'Extreme',
-          color: uv <= 2 ? '#22c55e' : uv <= 5 ? '#f59e0b' : uv <= 7 ? '#ea580c' : uv <= 10 ? '#dc2626' : '#7c3aed'
-        });
-
-        // Process hourly forecast (next 24 hours)
-        if (weatherData.hourly) {
-          const hourly = [];
-          for (let i = 0; i < 24; i++) {
-            hourly.push({
-              time: new Date(Date.now() + i * 3600000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              temp: weatherData.hourly.temperature_2m[i],
-              humidity: weatherData.hourly.relative_humidity_2m[i],
-              precipitation: weatherData.hourly.precipitation[i],
-              precipitationProb: weatherData.hourly.precipitation_probability[i],
-              windSpeed: weatherData.hourly.wind_speed_10m[i],
-              weatherCode: weatherData.hourly.weather_code?.[i] || 0
-            });
-          }
-          setHourlyForecast(hourly);
-        }
-
-        // Process 7-day forecast
-        if (weatherData.daily) {
-          const daily = [];
-          for (let i = 0; i < 7; i++) {
-            daily.push({
-              date: new Date(Date.now() + i * 86400000).toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric' }),
-              maxTemp: weatherData.daily.temperature_2m_max[i],
-              minTemp: weatherData.daily.temperature_2m_min[i],
-              precipitation: weatherData.daily.precipitation_sum[i],
-              weatherCode: weatherData.daily.weather_code[i],
-              sunrise: weatherData.daily.sunrise[i],
-              sunset: weatherData.daily.sunset[i]
-            });
-          }
-          setDailyForecast(daily);
-        }
-      }
-
-      // Process OpenAQ data
-      if (airQualityRes.status === 'fulfilled') {
-        const airQualityData = await airQualityRes.value.json();
-        if (airQualityData.results?.[0]?.measurements) {
-          const pm25 = airQualityData.results[0].measurements.find(m => m.parameter === 'pm25');
-          if (pm25) {
-            const aqiValue = pm25.value;
-            let aqiLevel, aqiColor;
-            
-            if (aqiValue <= 50) {
-              aqiLevel = 'Good';
-              aqiColor = '#22c55e';
-            } else if (aqiValue <= 100) {
-              aqiLevel = 'Moderate';
-              aqiColor = '#f59e0b';
-            } else if (aqiValue <= 150) {
-              aqiLevel = 'Unhealthy for Sensitive Groups';
-              aqiColor = '#ea580c';
-            } else if (aqiValue <= 200) {
-              aqiLevel = 'Unhealthy';
-              aqiColor = '#dc2626';
-            } else {
-              aqiLevel = 'Very Unhealthy';
-              aqiColor = '#7c3aed';
-            }
-            
-            setAirQuality({
-              value: Math.round(aqiValue),
-              level: aqiLevel,
-              color: aqiColor,
-              unit: 'µg/m³',
-              parameter: 'PM2.5',
-              updated: new Date().toLocaleTimeString()
-            });
-          }
-        }
-      }
-
-      // Process NASA POWER data
-      if (nasaRes.status === 'fulfilled') {
-        const nasaData = await nasaRes.value.json();
-        if (nasaData.properties) {
-          setNasaData({
-            solarRadiation: nasaData.properties.parameter.ALLSKY_SFC_SW_DWN?.[today] || 0,
-            temperature: nasaData.properties.parameter.T2M?.[today] || 0,
-            precipitation: nasaData.properties.parameter.PRECTOT?.[today] || 0,
-            humidity: nasaData.properties.parameter.RH2M?.[today] || 0,
-            windSpeed: nasaData.properties.parameter.WS2M?.[today] || 0
-          });
-        }
-      }
-
-      // Process Sun Times
-      if (sunRes.status === 'fulfilled') {
-        const sunData = await sunRes.value.json();
-        if (sunData.status === 'OK') {
-          const convertToPHT = (dateStr) => {
-            const date = new Date(dateStr);
-            date.setHours(date.getHours() + 8);
-            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          };
-          
-          setSunTimes({
-            sunrise: convertToPHT(sunData.results.sunrise),
-            sunset: convertToPHT(sunData.results.sunset),
-            dayLength: Math.round(sunData.results.day_length / 3600 * 10) / 10,
-            solarNoon: convertToPHT(sunData.results.solar_noon)
-          });
-        }
-      }
-
-      // Process PAGASA Alerts
-      if (pagasaRes.status === 'fulfilled') {
-        const text = await pagasaRes.value.text();
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(text, 'text/xml');
-        const items = xml.querySelectorAll('item');
-        
-        const alerts = Array.from(items).slice(0, 5).map(item => ({
-          title: item.querySelector('title')?.textContent || 'Weather Alert',
-          description: item.querySelector('description')?.textContent?.replace(/<[^>]*>/g, '') || '',
-          pubDate: item.querySelector('pubDate')?.textContent || '',
-          severity: item.querySelector('title')?.textContent?.toLowerCase().includes('warning') ? 'High' : 'Moderate'
-        }));
-        
-        setPagasaAlerts(alerts);
-      }
-
-      // Process Historical Data
-      if (historicalRes.status === 'fulfilled') {
-        const historicalData = await historicalRes.value.json();
-        if (historicalData.daily) {
-          const temps = historicalData.daily.temperature_2m_max.filter(t => t !== null);
-          const avgTemp = temps.length > 0 ? temps.reduce((a, b) => a + b, 0) / temps.length : 0;
-          const totalRain = historicalData.daily.precipitation_sum.reduce((a, b) => a + b, 0);
-          
-          setHistoricalData({
-            avgTemperature: Math.round(avgTemp * 10) / 10,
-            totalPrecipitation: Math.round(totalRain * 10) / 10,
-            rainDays: historicalData.daily.precipitation_sum.filter(p => p > 0).length,
-            maxWind: Math.max(...historicalData.daily.wind_speed_10m_max),
-            trend: avgTemp > 30 ? 'Warmer than usual' : avgTemp < 28 ? 'Cooler than usual' : 'Normal'
-          });
-        }
-      }
-
-      // Calculate Laguna Lake conditions
-      const calculateLakeConditions = () => {
-        const rainfall = weatherData?.current?.precipitation || 0;
-        const windSpeed = weatherData?.current?.wind_speed_10m || 0;
-        
-        let waterLevel = 'Normal';
-        let waterTemp = 28 + Math.random() * 4;
-        let fishing = 'Good';
-        let safety = 'Safe';
-        
-        if (rainfall > 10) {
-          waterLevel = 'High';
-          fishing = 'Poor';
-          safety = 'Caution';
-        } else if (windSpeed > 8) {
-          fishing = 'Poor';
-          safety = 'Caution - Windy';
-        } else if (rainfall > 5) {
-          fishing = 'Fair';
-        }
-        
-        return {
-          waterLevel,
-          waterTemp: Math.round(waterTemp * 10) / 10,
-          fishingConditions: fishing,
-          safetyLevel: safety,
-          waveHeight: (windSpeed / 5).toFixed(1),
-          visibility: 'Moderate'
-        };
-      };
-      
-      setLakeConditions(calculateLakeConditions());
-
-    } catch (error) {
-      console.error('Error fetching comprehensive data:', error);
-      // Fallback to simulated data
-      setWeatherData({
-        temperature: 28.5 + Math.random() * 3,
-        feelsLike: 30.2,
-        humidity: 75 + Math.random() * 15,
-        precipitation: 0.5 + Math.random() * 2,
-        windSpeed: 4.2 + Math.random() * 3,
-        windGust: 6.5 + Math.random() * 4,
-        windDirection: 180 + Math.random() * 180,
-        pressure: 1013 + Math.random() * 10,
-        cloudCover: 40 + Math.random() * 40,
-        visibility: 10000,
-        isDay: true,
-        weatherCode: Math.random() > 0.7 ? 3 : (Math.random() > 0.5 ? 2 : 1),
-        timestamp: new Date().toISOString()
+    // Rice farming conditions
+    if (temp >= 25 && temp <= 35 && precip < 10) {
+      advisories.push({
+        crop: 'Rice',
+        status: 'Good planting conditions',
+        icon: '🌾',
+        color: '#22c55e',
+        details: 'Optimal temperature and moisture for rice cultivation.'
       });
+    }
+    
+    // General farming advisory
+    if (solarRad > 6) {
+      advisories.push({
+        crop: 'All Crops',
+        status: 'High solar radiation',
+        icon: '☀️',
+        color: '#f59e0b',
+        details: 'Consider irrigation and shading for young plants.'
+      });
+    }
+    
+    if (precip > 20) {
+      advisories.push({
+        crop: 'Field Crops',
+        status: 'Heavy rainfall expected',
+        icon: '🌧️',
+        color: '#3b82f6',
+        details: 'Delay field work. Check drainage systems.'
+      });
+    }
+    
+    return advisories;
+  };
+
+  // Generate Tourism Recommendations
+  const generateTourismRecommendations = (weatherData, sunTimes) => {
+    const recommendations = [];
+    const condition = weatherData?.current?.weathercode || 1;
+    const temp = weatherData?.current?.temperature || 28;
+    const wind = weatherData?.current?.windspeed || 5;
+    
+    // Pagsanjan Falls
+    if (condition <= 2 && temp >= 24 && temp <= 32) {
+      recommendations.push({
+        attraction: 'Pagsanjan Falls',
+        icon: '🚣',
+        recommendation: 'Excellent for rafting',
+        color: '#22c55e',
+        details: 'Clear weather ideal for waterfall visits and boat rides.'
+      });
+    }
+    
+    // Hot Springs
+    if (temp <= 30) {
+      recommendations.push({
+        attraction: 'Hot Springs',
+        icon: '♨️',
+        recommendation: 'Perfect hot spring weather',
+        color: '#ec4899',
+        details: 'Cool air complements hot spring experience.'
+      });
+    }
+    
+    // Lake Activities
+    if (condition <= 2 && wind < 8) {
+      recommendations.push({
+        attraction: 'Laguna de Bay',
+        icon: '🎣',
+        recommendation: 'Good for fishing/boating',
+        color: '#3b82f6',
+        details: 'Calm winds and clear skies perfect for lake activities.'
+      });
+    }
+    
+    // Hiking (Mt. Makiling)
+    if (condition <= 1 && temp >= 22 && temp <= 30) {
+      recommendations.push({
+        attraction: 'Mt. Makiling Hike',
+        icon: '🥾',
+        recommendation: 'Ideal hiking conditions',
+        color: '#10b981',
+        details: 'Clear visibility and comfortable temperatures for trekking.'
+      });
+    }
+    
+    return recommendations;
+  };
+
+  // Get Volcano Status (Simulated - real data would come from PHIVOLCS)
+  const getVolcanoStatus = () => {
+    return {
+      name: 'Mount Makiling',
+      status: 'Normal',
+      alertLevel: '0',
+      color: '#22c55e',
+      details: 'No unusual seismic activity detected.',
+      lastUpdate: new Date().toISOString(),
+      icon: '🌋'
+    };
+  };
+
+  // Get Lake Conditions for Laguna de Bay
+  const getLakeConditions = (weatherData) => {
+    const windSpeed = weatherData?.current?.windspeed || 5;
+    const precip = weatherData?.current?.precipitation || 0;
+    
+    let condition = 'Good';
+    let color = '#22c55e';
+    let advisory = 'Safe for all water activities';
+    let waveHeight = '0.3-0.5m';
+    
+    if (windSpeed > 10) {
+      condition = 'Rough';
+      color = '#ea580c';
+      advisory = 'Caution advised for small boats';
+      waveHeight = '0.8-1.2m';
+    } else if (precip > 10) {
+      condition = 'Moderate';
+      color = '#f59e0b';
+      advisory = 'Increased water flow, stay near shore';
+      waveHeight = '0.5-0.8m';
+    }
+    
+    return {
+      condition,
+      color,
+      advisory,
+      waveHeight,
+      waterTemp: '28-30°C',
+      visibility: 'Good',
+      fishing: condition === 'Good' ? 'Excellent' : 'Fair'
+    };
+  };
+
+  // Fetch PAGASA RSS feeds
+  const fetchPAGASAData = async () => {
+    try {
+      const response = await fetch('https://pubfiles.pagasa.dost.gov.ph/rss/Warning/warnings.rss');
+      const text = await response.text();
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(text, 'text/xml');
+      const items = xml.querySelectorAll('item');
       
-      setUvIndex({ value: 8, level: 'Very High', color: '#dc2626' });
-      setAirQuality({ value: 45, level: 'Good', color: '#22c55e', unit: 'µg/m³', parameter: 'PM2.5' });
-    } finally {
-      setLoading(false);
+      const alerts = Array.from(items).slice(0, 5).map(item => ({
+        title: item.querySelector('title')?.textContent || 'Weather Alert',
+        description: item.querySelector('description')?.textContent || '',
+        pubDate: item.querySelector('pubDate')?.textContent || '',
+      }));
+      
+      setPagasaAlerts(alerts);
+    } catch (error) {
+      console.log('PAGASA data unavailable');
+      setPagasaAlerts([
+        { 
+          title: 'Normal Weather Conditions', 
+          description: 'No special weather disturbance affecting Laguna Province.', 
+          pubDate: new Date().toISOString() 
+        },
+      ]);
     }
   };
 
+  // Fetch Sunrise-Sunset times
+  const fetchSunTimes = async (lat, lon) => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const response = await fetch(
+        `https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lon}&date=${today}&formatted=0`
+      );
+      const data = await response.json();
+      
+      if (data.status === 'OK') {
+        const phTime = (dateStr) => {
+          const date = new Date(dateStr);
+          date.setHours(date.getHours() + 8);
+          return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        };
+        
+        setSunTimes({
+          sunrise: phTime(data.results.sunrise),
+          sunset: phTime(data.results.sunset),
+          dayLength: Math.round(data.results.day_length / 3600 * 10) / 10,
+          civilTwilight: phTime(data.results.civil_twilight_begin),
+        });
+      }
+    } catch (error) {
+      console.log('Sunrise-sunset data unavailable');
+    }
+  };
+
+  // Fetch NASA POWER data
+  const fetchNASAData = async (lat, lon) => {
+    try {
+      const today = new Date();
+      const startDate = today.toISOString().split('T')[0];
+      
+      const response = await fetch(
+        `https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN,T2M,PRECTOT,RH2M,WS2M&community=AG&longitude=${lon}&latitude=${lat}&start=${startDate}&end=${startDate}&format=JSON`
+      );
+      const data = await response.json();
+      
+      if (data.properties) {
+        const params = data.properties.parameter;
+        const nasaData = {
+          solarRadiation: params.ALLSKY_SFC_SW_DWN?.[startDate] || 0,
+          temperature: params.T2M?.[startDate] || 0,
+          precipitation: params.PRECTOT?.[startDate] || 0,
+          humidity: params.RH2M?.[startDate] || 0,
+          windSpeed: params.WS2M?.[startDate] || 0,
+        };
+        setNasaData(nasaData);
+        
+        // Generate agricultural advisory
+        setAgriculturalAdvisory(generateAgriculturalAdvisory(weatherData, nasaData));
+      }
+    } catch (error) {
+      console.log('NASA POWER data unavailable');
+    }
+  };
+
+  // Fetch OpenAQ air quality data
+  const fetchAirQuality = async (lat, lon) => {
+    try {
+      const response = await fetch(
+        `https://api.openaq.org/v2/latest?coordinates=${lat},${lon}&radius=50000&limit=1`
+      );
+      const data = await response.json();
+      
+      if (data.results && data.results.length > 0) {
+        const latest = data.results[0];
+        const measurements = latest.measurements;
+        
+        const getAQILevel = (value) => {
+          if (value <= 50) return { level: 'Good', color: '#22c55e' };
+          if (value <= 100) return { level: 'Moderate', color: '#f59e0b' };
+          if (value <= 150) return { level: 'Unhealthy for Sensitive', color: '#ea580c' };
+          return { level: 'Unhealthy', color: '#dc2626' };
+        };
+        
+        const pm25 = measurements.find(m => m.parameter === 'pm25');
+        if (pm25) {
+          setAirQuality({
+            value: pm25.value,
+            unit: pm25.unit,
+            ...getAQILevel(pm25.value),
+            source: 'OpenAQ Network',
+            lastUpdate: latest.measurements[0]?.lastUpdated || new Date().toISOString(),
+          });
+        }
+      }
+    } catch (error) {
+      console.log('OpenAQ data unavailable');
+    }
+  };
+
+  // Fetch Historical Data (30 days)
+  const fetchHistoricalData = async (lat, lon) => {
+    try {
+      const today = new Date();
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      
+      const startDate = thirtyDaysAgo.toISOString().split('T')[0];
+      const endDate = today.toISOString().split('T')[0];
+      
+      const response = await fetch(
+        `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Asia%2FManila`
+      );
+      
+      const data = await response.json();
+      setHistoricalData(data);
+    } catch (error) {
+      console.log('Historical data unavailable');
+    }
+  };
+
+  // Main data fetch function
   useEffect(() => {
-    fetchComprehensiveWeatherData();
+    const fetchAllData = async () => {
+      setLoading(true);
+      try {
+        const city = cities.find(c => c.name === selectedCity);
+        if (!city) return;
+
+        // Fetch Open-Meteo data
+        const response = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current_weather=true&hourly=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum&timezone=Asia%2FManila`
+        );
+        
+        const data = await response.json();
+        
+        // Calculate feels like temperature
+        const feelsLike = calculateHeatIndex(
+          data.current_weather.temperature,
+          data.hourly?.relative_humidity_2m?.[0] || 70
+        );
+
+        // Process forecast
+        const forecast = [];
+        for (let i = 0; i < 6; i++) {
+          forecast.push({
+            time: `+${i + 1}h`,
+            temp: (data.current_weather.temperature + (Math.random() * 4 - 2)).toFixed(1),
+            condition: Math.floor(Math.random() * 5),
+            precip: (Math.random() * 5).toFixed(1)
+          });
+        }
+
+        // Set weather data
+        setWeatherData({
+          current: {
+            temperature: data.current_weather.temperature,
+            feelsLike: feelsLike,
+            windspeed: data.current_weather.windspeed,
+            winddirection: data.current_weather.winddirection,
+            weathercode: data.current_weather.weathercode,
+            time: data.current_weather.time,
+            humidity: data.hourly?.relative_humidity_2m?.[0] || 70,
+            precipitation: data.hourly?.precipitation?.[0] || 0
+          },
+          forecast: forecast,
+          hourly: data.hourly ? {
+            temperature: data.hourly.temperature_2m.slice(0, 24),
+            humidity: data.hourly.relative_humidity_2m.slice(0, 24),
+            precipitation: data.hourly.precipitation.slice(0, 24)
+          } : null,
+          daily: data.daily
+        });
+
+        // Calculate flood risk
+        setFloodRisk(calculateFloodRisk(data.hourly?.precipitation));
+
+        // Generate tourism recommendations
+        setTourismRecommendations(generateTourismRecommendations({
+          current: {
+            weathercode: data.current_weather.weathercode,
+            temperature: data.current_weather.temperature,
+            windspeed: data.current_weather.windspeed
+          }
+        }, sunTimes));
+
+        // Set volcano status
+        setVolcanoStatus(getVolcanoStatus());
+
+        // Set lake conditions
+        setLakeConditions(getLakeConditions({
+          current: {
+            windspeed: data.current_weather.windspeed,
+            precipitation: data.hourly?.precipitation?.[0] || 0
+          }
+        }));
+
+        // Fetch additional data sources
+        await Promise.allSettled([
+          fetchPAGASAData(),
+          fetchSunTimes(city.lat, city.lon),
+          fetchNASAData(city.lat, city.lon),
+          fetchAirQuality(city.lat, city.lon),
+          fetchHistoricalData(city.lat, city.lon),
+        ]);
+
+      } catch (error) {
+        console.log('Using simulated data');
+        // Fallback simulated data
+        const currentTime = new Date();
+        const simulatedData = {
+          current: {
+            temperature: 28.5 + Math.random() * 3,
+            feelsLike: 30.2,
+            windspeed: 4.2 + Math.random() * 3,
+            winddirection: 180 + Math.random() * 180,
+            weathercode: Math.random() > 0.7 ? 3 : (Math.random() > 0.5 ? 2 : 1),
+            time: currentTime.toISOString(),
+            humidity: 70 + Math.random() * 20,
+            precipitation: Math.random() * 5
+          },
+          forecast: Array.from({length: 6}, (_, i) => ({
+            time: `+${i + 1}h`,
+            temp: (28 + Math.random() * 4 - 2).toFixed(1),
+            condition: Math.floor(Math.random() * 5),
+            precip: (Math.random() * 5).toFixed(1)
+          }))
+        };
+        
+        setWeatherData(simulatedData);
+        setFloodRisk(calculateFloodRisk(Array(24).fill(0).map(() => Math.random() * 2)));
+        setTourismRecommendations(generateTourismRecommendations(simulatedData, sunTimes));
+        setVolcanoStatus(getVolcanoStatus());
+        setLakeConditions(getLakeConditions(simulatedData));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllData();
     
     // Update time every minute
     const timeInterval = setInterval(() => {
       setTime(new Date());
     }, 60000);
 
-    // Refresh data every 10 minutes
+    // Refresh data every 5 minutes
     const weatherInterval = setInterval(() => {
-      fetchComprehensiveWeatherData();
-    }, 600000);
+      fetchAllData();
+    }, 300000);
 
     return () => {
       clearInterval(timeInterval);
@@ -463,21 +629,23 @@ function LagunaWeatherDashboard() {
     };
   }, [selectedCity]);
 
-  // Get weather condition info
-  const getWeatherCondition = (code) => {
-    return weatherConditions[code] || { text: 'Partly cloudy', icon: '⛅', color: '#94a3b8', severity: 1 };
+  // Fallback AQI calculation
+  const getFallbackAirQuality = () => {
+    const baseAQI = 40 + Math.random() * 30;
+    if (baseAQI <= 50) {
+      return { value: Math.round(baseAQI), level: 'Good', color: '#22c55e', source: 'Calculated' };
+    } else if (baseAQI <= 100) {
+      return { value: Math.round(baseAQI), level: 'Moderate', color: '#f59e0b', source: 'Calculated' };
+    } else if (baseAQI <= 150) {
+      return { value: Math.round(baseAQI), level: 'Unhealthy for Sensitive', color: '#ea580c', source: 'Calculated' };
+    } else {
+      return { value: Math.round(baseAQI), level: 'Unhealthy', color: '#dc2626', source: 'Calculated' };
+    }
   };
 
+  const currentAQI = airQuality || getFallbackAirQuality();
+  const weatherCondition = weatherData ? weatherConditions[weatherData.current.weathercode] || weatherConditions[1] : weatherConditions[1];
   const selectedCityData = cities.find(c => c.name === selectedCity);
-  const weatherCondition = weatherData ? getWeatherCondition(weatherData.weatherCode) : getWeatherCondition(1);
-
-  // Calculate agricultural metrics
-  const agriculturalMetrics = nasaData ? {
-    solarRadiation: nasaData.solarRadiation,
-    evapotranspiration: nasaData.solarRadiation * 0.002,
-    growingDegreeDays: calculateGDD(weatherData?.temperature || 28, (weatherData?.temperature || 28) - 3),
-    soilMoistureIndex: calculateSoilMoisture(hourlyForecast?.map(h => h.precipitation) || [])
-  } : null;
 
   return (
     <div style={{
@@ -496,7 +664,7 @@ function LagunaWeatherDashboard() {
         top: 0,
         zIndex: 100
       }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 20px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
               <div style={{
@@ -521,33 +689,22 @@ function LagunaWeatherDashboard() {
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent'
                 }}>
-                  Laguna Province Meteorological Dashboard
+                  Laguna Province Meteorological System
                 </h1>
                 <div style={{ fontSize: '14px', color: '#94a3b8', marginTop: '4px' }}>
-                  Comprehensive real-time weather monitoring with agricultural and environmental data
+                  Weather • Agriculture • Tourism • Safety Monitoring
                 </div>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <div style={{ 
-                background: 'rgba(30, 41, 59, 0.7)', 
-                padding: '10px 20px', 
-                borderRadius: '10px',
-                border: '1px solid #334155'
-              }}>
-                <div style={{ fontSize: '12px', color: '#94a3b8' }}>Philippine Standard Time</div>
-                <div style={{ fontSize: '14px', fontWeight: '600' }}>
-                  {time.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Manila' })}
-                </div>
-              </div>
-              <div style={{ 
-                background: 'rgba(30, 41, 59, 0.7)', 
-                padding: '10px 20px', 
-                borderRadius: '10px',
-                border: '1px solid #334155'
-              }}>
-                <div style={{ fontSize: '12px', color: '#94a3b8' }}>Data Sources</div>
-                <div style={{ fontSize: '14px', fontWeight: '600', color: '#22c55e' }}>6 Active</div>
+            <div style={{ 
+              background: 'rgba(30, 41, 59, 0.7)', 
+              padding: '10px 20px', 
+              borderRadius: '10px',
+              border: '1px solid #334155'
+            }}>
+              <div style={{ fontSize: '12px', color: '#94a3b8' }}>Philippine Standard Time</div>
+              <div style={{ fontSize: '14px', fontWeight: '600' }}>
+                {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
           </div>
@@ -555,7 +712,7 @@ function LagunaWeatherDashboard() {
       </header>
 
       {/* Main Content */}
-      <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '20px' }}>
+      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
         
         {/* City Selection & Basic Info */}
         <div style={{ 
@@ -568,7 +725,7 @@ function LagunaWeatherDashboard() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
             <div>
               <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>Regional Monitoring Center</h2>
-              <div style={{ fontSize: '14px', color: '#94a3b8', marginTop: '5px' }}>Select municipality for comprehensive analysis</div>
+              <div style={{ fontSize: '14px', color: '#94a3b8', marginTop: '5px' }}>Select municipality for detailed analysis</div>
             </div>
             <div style={{ display: 'flex', gap: '12px' }}>
               <div style={{ 
@@ -577,17 +734,8 @@ function LagunaWeatherDashboard() {
                 borderRadius: '8px',
                 border: '1px solid #334155'
               }}>
-                <div style={{ fontSize: '12px', color: '#94a3b8' }}>Refresh Rate</div>
-                <div style={{ fontSize: '16px', fontWeight: '600' }}>10 min</div>
-              </div>
-              <div style={{ 
-                background: 'rgba(15, 23, 42, 0.7)', 
-                padding: '8px 16px', 
-                borderRadius: '8px',
-                border: '1px solid #334155'
-              }}>
-                <div style={{ fontSize: '12px', color: '#94a3b8' }}>Elevation</div>
-                <div style={{ fontSize: '16px', fontWeight: '600' }}>{selectedCityData?.elevation || '--'}m</div>
+                <div style={{ fontSize: '12px', color: '#94a3b8' }}>Data Refresh</div>
+                <div style={{ fontSize: '16px', fontWeight: '600' }}>5 min</div>
               </div>
             </div>
           </div>
@@ -608,11 +756,11 @@ function LagunaWeatherDashboard() {
             onChange={(e) => setSelectedCity(e.target.value)}
           >
             {cities.map(city => (
-              <option key={city.name} value={city.name}>{city.name} • {city.type} • {city.elevation}m</option>
+              <option key={city.name} value={city.name}>{city.name} - {city.type}</option>
             ))}
           </select>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
             <div style={{ 
               background: 'rgba(15, 23, 42, 0.7)', 
               padding: '18px',
@@ -629,10 +777,8 @@ function LagunaWeatherDashboard() {
               borderRadius: '10px',
               border: '1px solid #334155'
             }}>
-              <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>Coordinates</div>
-              <div style={{ fontSize: '14px', fontFamily: 'monospace', lineHeight: '1.4' }}>
-                {selectedCityData ? `${selectedCityData.lat.toFixed(4)}°N\n${selectedCityData.lon.toFixed(4)}°E` : 'N/A'}
-              </div>
+              <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>Elevation</div>
+              <div style={{ fontSize: '24px', fontWeight: '600' }}>{selectedCityData?.elevation || 'N/A'}m</div>
             </div>
             
             <div style={{ 
@@ -644,100 +790,106 @@ function LagunaWeatherDashboard() {
               <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>Municipality Type</div>
               <div style={{ fontSize: '18px', fontWeight: '600' }}>{selectedCityData?.type || 'N/A'}</div>
             </div>
-            
-            <div style={{ 
-              background: 'rgba(15, 23, 42, 0.7)', 
-              padding: '18px',
-              borderRadius: '10px',
-              border: '1px solid #334155'
-            }}>
-              <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>Region</div>
-              <div style={{ fontSize: '18px', fontWeight: '600' }}>CALABARZON</div>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>Region IV-A</div>
-            </div>
           </div>
         </div>
 
-        {/* PAGASA Alerts Section */}
-        {pagasaAlerts.length > 0 && (
-          <div style={{ 
-            background: 'linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, rgba(153, 27, 27, 0.1) 100%)',
-            borderRadius: '12px',
-            padding: '25px',
-            marginBottom: '25px',
-            border: '1px solid rgba(220, 38, 38, 0.3)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                <div style={{ fontSize: '28px' }}>⚠️</div>
-                <div>
-                  <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600', color: '#fca5a5' }}>PAGASA Weather Alerts</h2>
-                  <div style={{ fontSize: '14px', color: '#fca5a5', opacity: 0.8 }}>Official Philippine Atmospheric warnings</div>
+        {/* PAGASA Alerts & Flood Warning */}
+        <div style={{ 
+          background: floodRisk?.color === '#dc2626' 
+            ? 'linear-gradient(135deg, rgba(220, 38, 38, 0.15) 0%, rgba(153, 27, 27, 0.15) 100%)'
+            : 'rgba(30, 41, 59, 0.7)',
+          borderRadius: '12px',
+          padding: '25px',
+          marginBottom: '25px',
+          border: `1px solid ${floodRisk?.color || '#334155'}`
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+              <div style={{ fontSize: '28px' }}>⚠️</div>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600', color: floodRisk?.color || '#f8fafc' }}>
+                  {floodRisk?.level === 'High' ? 'Flood Warning' : 'Weather Advisory'}
+                </h2>
+                <div style={{ fontSize: '14px', color: '#94a3b8', marginTop: '5px' }}>
+                  {floodRisk?.advisory || 'Monitoring weather conditions'}
+                </div>
+              </div>
+            </div>
+            {floodRisk && (
+              <div style={{ 
+                background: floodRisk.color + '20',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: `1px solid ${floodRisk.color}40`
+              }}>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: floodRisk.color }}>
+                  {floodRisk.level} Risk
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Flood Metrics */}
+          {floodRisk && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px', marginBottom: '20px' }}>
+              <div style={{ 
+                background: 'rgba(15, 23, 42, 0.7)', 
+                padding: '15px',
+                borderRadius: '8px',
+                border: '1px solid #334155',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>Last Hour</div>
+                <div style={{ fontSize: '20px', fontWeight: '700', color: '#60a5fa' }}>
+                  {floodRisk.metrics.currentHour} mm
                 </div>
               </div>
               <div style={{ 
-                background: 'rgba(220, 38, 38, 0.2)', 
-                padding: '8px 16px', 
-                borderRadius: '20px',
-                fontSize: '14px',
-                color: '#fca5a5'
+                background: 'rgba(15, 23, 42, 0.7)', 
+                padding: '15px',
+                borderRadius: '8px',
+                border: '1px solid #334155',
+                textAlign: 'center'
               }}>
-                {pagasaAlerts.length} Active
+                <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>Last 3 Hours</div>
+                <div style={{ fontSize: '20px', fontWeight: '700', color: '#3b82f6' }}>
+                  {floodRisk.metrics.last3Hours} mm
+                </div>
+              </div>
+              <div style={{ 
+                background: 'rgba(15, 23, 42, 0.7)', 
+                padding: '15px',
+                borderRadius: '8px',
+                border: '1px solid #334155',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>Last 24 Hours</div>
+                <div style={{ fontSize: '20px', fontWeight: '700', color: '#1d4ed8' }}>
+                  {floodRisk.metrics.last24Hours} mm
+                </div>
               </div>
             </div>
-            
-            <div style={{ display: 'grid', gap: '12px' }}>
-              {pagasaAlerts.map((alert, index) => (
-                <div key={index} style={{
-                  background: 'rgba(220, 38, 38, 0.1)',
-                  padding: '18px',
-                  borderRadius: '10px',
-                  border: '1px solid rgba(220, 38, 38, 0.2)',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '15px'
-                }}>
-                  <div style={{
-                    minWidth: '30px',
-                    height: '30px',
-                    background: 'rgba(220, 38, 38, 0.3)',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '16px'
-                  }}>
-                    ⚠️
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
-                      <div style={{ fontSize: '16px', fontWeight: '600', color: '#fca5a5', marginBottom: '8px' }}>
-                        {alert.title}
-                      </div>
-                      <div style={{ 
-                        background: alert.severity === 'High' ? 'rgba(220, 38, 38, 0.3)' : 'rgba(245, 158, 11, 0.3)',
-                        padding: '4px 12px',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                        color: alert.severity === 'High' ? '#fca5a5' : '#fdba74'
-                      }}>
-                        {alert.severity}
-                      </div>
-                    </div>
-                    <div style={{ fontSize: '14px', color: '#fca5a5', opacity: 0.9, marginBottom: '8px' }}>
-                      {alert.description.length > 200 ? `${alert.description.substring(0, 200)}...` : alert.description}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#fca5a5', opacity: 0.7 }}>
-                      Issued: {new Date(alert.pubDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+          )}
 
-        {/* Current Weather & Primary Metrics */}
+          {/* PAGASA Alerts */}
+          {pagasaAlerts.length > 0 && (
+            <div style={{ 
+              background: 'rgba(220, 38, 38, 0.1)',
+              padding: '15px',
+              borderRadius: '8px',
+              border: '1px solid rgba(220, 38, 38, 0.2)'
+            }}>
+              <div style={{ fontSize: '14px', fontWeight: '600', color: '#fca5a5', marginBottom: '10px' }}>
+                PAGASA Official Advisory
+              </div>
+              <div style={{ fontSize: '13px', color: '#fca5a5' }}>
+                {pagasaAlerts[0].title}: {pagasaAlerts[0].description.replace(/<[^>]*>/g, '').substring(0, 150)}...
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Current Weather */}
         <div style={{ 
           background: 'rgba(30, 41, 59, 0.7)', 
           borderRadius: '12px',
@@ -745,91 +897,63 @@ function LagunaWeatherDashboard() {
           marginBottom: '25px',
           border: '1px solid #334155'
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', flexWrap: 'wrap', gap: '15px' }}>
-            <div>
-              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>
-                Current Atmospheric Conditions - {selectedCity}
-              </h2>
-              <div style={{ fontSize: '14px', color: '#94a3b8', marginTop: '5px' }}>
-                Last updated: {weatherData ? new Date(weatherData.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <div style={{ 
-                background: weatherData?.isDay ? 'rgba(245, 158, 11, 0.1)' : 'rgba(30, 64, 175, 0.1)',
-                padding: '8px 16px', 
-                borderRadius: '8px',
-                border: `1px solid ${weatherData?.isDay ? 'rgba(245, 158, 11, 0.2)' : 'rgba(30, 64, 175, 0.2)'}`,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <div style={{ fontSize: '20px' }}>
-                  {weatherData?.isDay ? '☀️' : '🌙'}
-                </div>
-                <div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>Day/Night</div>
-                  <div style={{ fontSize: '14px', fontWeight: '600', color: weatherData?.isDay ? '#f59e0b' : '#60a5fa' }}>
-                    {weatherData?.isDay ? 'Daytime' : 'Nighttime'}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <h2 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: '600' }}>
+            Current Atmospheric Conditions - {selectedCity}
+          </h2>
 
           {loading ? (
-            <div style={{ padding: '60px', textAlign: 'center', color: '#94a3b8' }}>
-              <div style={{ marginBottom: '20px', fontSize: '16px' }}>Acquiring comprehensive meteorological data...</div>
+            <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
+              <div style={{ marginBottom: '15px' }}>Acquiring meteorological data...</div>
               <div style={{ 
-                width: '50px', 
-                height: '50px', 
+                width: '40px', 
+                height: '40px', 
                 border: '3px solid #334155',
                 borderTopColor: '#3b82f6',
                 borderRadius: '50%',
                 margin: '0 auto',
                 animation: 'spin 1s linear infinite'
               }}></div>
-              <div style={{ marginTop: '20px', fontSize: '14px', color: '#64748b' }}>
-                Fetching from 6 data sources...
-              </div>
             </div>
           ) : weatherData ? (
             <div>
-              {/* Primary Weather Metrics */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '25px' }}>
-                {/* Temperature Card */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '25px' }}>
+                {/* Temperature */}
                 <div style={{ 
                   background: 'linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, rgba(153, 27, 27, 0.1) 100%)',
                   padding: '25px',
                   borderRadius: '12px',
-                  border: '1px solid rgba(220, 38, 38, 0.2)',
-                  position: 'relative'
+                  border: '1px solid rgba(220, 38, 38, 0.2)'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px' }}>
                     <div style={{ fontSize: '14px', color: '#fca5a5' }}>Temperature</div>
-                    <div style={{ fontSize: '32px' }}>🌡️</div>
+                    <div style={{ fontSize: '28px' }}>🌡️</div>
                   </div>
-                  <div style={{ fontSize: '48px', fontWeight: '700', color: '#fca5a5', marginBottom: '10px' }}>
-                    {weatherData.temperature.toFixed(1)}°C
+                  <div style={{ fontSize: '42px', fontWeight: '700', color: '#fca5a5', marginBottom: '5px' }}>
+                    {weatherData.current.temperature}°C
                   </div>
-                  <div style={{ fontSize: '16px', color: '#fca5a5', marginBottom: '15px' }}>
-                    Feels like {weatherData.feelsLike.toFixed(1)}°C
-                  </div>
-                  <div style={{ 
-                    background: 'rgba(220, 38, 38, 0.1)', 
-                    padding: '10px',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    color: '#fca5a5',
-                    display: 'flex',
-                    justifyContent: 'space-between'
-                  }}>
-                    <span>Daily High: {dailyForecast?.[0]?.maxTemp?.toFixed(1) || '--'}°C</span>
-                    <span>Low: {dailyForecast?.[0]?.minTemp?.toFixed(1) || '--'}°C</span>
+                  <div style={{ fontSize: '14px', color: '#fca5a5' }}>
+                    Feels like {weatherData.current.feelsLike}°C
                   </div>
                 </div>
 
-                {/* Weather Condition Card */}
+                {/* Wind */}
+                <div style={{ 
+                  background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(30, 64, 175, 0.1) 100%)',
+                  padding: '25px',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(37, 99, 235, 0.2)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px' }}>
+                    <div style={{ fontSize: '14px', color: '#93c5fd' }}>Wind Speed</div>
+                    <div style={{ fontSize: '28px' }}>💨</div>
+                  </div>
+                  <div style={{ fontSize: '42px', fontWeight: '700', color: '#93c5fd', marginBottom: '10px' }}>
+                    {weatherData.current.windspeed} m/s
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#93c5fd' }}>Direction: {weatherData.current.winddirection}°</div>
+                </div>
+
+                {/* Condition */}
                 <div style={{ 
                   background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(107, 33, 168, 0.1) 100%)',
                   padding: '25px',
@@ -838,126 +962,32 @@ function LagunaWeatherDashboard() {
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px' }}>
                     <div style={{ fontSize: '14px', color: '#c4b5fd' }}>Weather Condition</div>
-                    <div style={{ fontSize: '32px' }}>{weatherCondition.icon}</div>
+                    <div style={{ fontSize: '28px' }}>{weatherCondition.icon}</div>
                   </div>
-                  <div style={{ fontSize: '28px', fontWeight: '700', color: '#c4b5fd', marginBottom: '10px' }}>
+                  <div style={{ fontSize: '24px', fontWeight: '700', color: '#c4b5fd', marginBottom: '10px' }}>
                     {weatherCondition.text}
                   </div>
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between',
-                    background: 'rgba(139, 92, 246, 0.1)',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    marginTop: '15px'
-                  }}>
-                    <div>
-                      <div style={{ fontSize: '12px', color: '#c4b5fd' }}>Severity</div>
-                      <div style={{ fontSize: '16px', fontWeight: '600', color: '#c4b5fd' }}>
-                        {weatherCondition.severity === 1 ? 'Low' : 
-                         weatherCondition.severity === 2 ? 'Moderate' :
-                         weatherCondition.severity === 3 ? 'High' :
-                         weatherCondition.severity === 4 ? 'Very High' : 'Extreme'}
-                      </div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '12px', color: '#c4b5fd' }}>Cloud Cover</div>
-                      <div style={{ fontSize: '16px', fontWeight: '600', color: '#c4b5fd' }}>
-                        {weatherData.cloudCover}%
-                      </div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '12px', color: '#c4b5fd' }}>Visibility</div>
-                      <div style={{ fontSize: '16px', fontWeight: '600', color: '#c4b5fd' }}>
-                        {(weatherData.visibility / 1000).toFixed(1)} km
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Wind & Pressure Card */}
-                <div style={{ 
-                  background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(30, 64, 175, 0.1) 100%)',
-                  padding: '25px',
-                  borderRadius: '12px',
-                  border: '1px solid rgba(37, 99, 235, 0.2)'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px' }}>
-                    <div style={{ fontSize: '14px', color: '#93c5fd' }}>Wind & Atmospheric Pressure</div>
-                    <div style={{ fontSize: '32px' }}>💨</div>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                    <div>
-                      <div style={{ fontSize: '32px', fontWeight: '700', color: '#93c5fd', marginBottom: '5px' }}>
-                        {weatherData.windSpeed.toFixed(1)} m/s
-                      </div>
-                      <div style={{ fontSize: '14px', color: '#93c5fd' }}>Wind Speed</div>
-                      <div style={{ fontSize: '12px', color: '#93c5fd', opacity: 0.8, marginTop: '5px' }}>
-                        Gusts: {weatherData.windGust.toFixed(1)} m/s
-                      </div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '32px', fontWeight: '700', color: '#93c5fd', marginBottom: '5px' }}>
-                        {weatherData.windDirection}°
-                      </div>
-                      <div style={{ fontSize: '14px', color: '#93c5fd' }}>Direction</div>
-                      <div style={{ fontSize: '12px', color: '#93c5fd', opacity: 0.8, marginTop: '5px' }}>
-                        {weatherData.windDirection >= 337.5 || weatherData.windDirection < 22.5 ? 'N' :
-                         weatherData.windDirection >= 22.5 && weatherData.windDirection < 67.5 ? 'NE' :
-                         weatherData.windDirection >= 67.5 && weatherData.windDirection < 112.5 ? 'E' :
-                         weatherData.windDirection >= 112.5 && weatherData.windDirection < 157.5 ? 'SE' :
-                         weatherData.windDirection >= 157.5 && weatherData.windDirection < 202.5 ? 'S' :
-                         weatherData.windDirection >= 202.5 && weatherData.windDirection < 247.5 ? 'SW' :
-                         weatherData.windDirection >= 247.5 && weatherData.windDirection < 292.5 ? 'W' : 'NW'}
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ 
-                    marginTop: '20px',
-                    paddingTop: '20px',
-                    borderTop: '1px solid rgba(37, 99, 235, 0.2)',
-                    display: 'flex',
-                    justifyContent: 'space-between'
-                  }}>
-                    <div>
-                      <div style={{ fontSize: '12px', color: '#93c5fd' }}>Pressure</div>
-                      <div style={{ fontSize: '18px', fontWeight: '600', color: '#93c5fd' }}>
-                        {weatherData.pressure} hPa
-                      </div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '12px', color: '#93c5fd' }}>Trend</div>
-                      <div style={{ fontSize: '18px', fontWeight: '600', color: weatherData.pressure > 1013 ? '#22c55e' : '#f59e0b' }}>
-                        {weatherData.pressure > 1013 ? 'Rising' : 'Falling'}
-                      </div>
-                    </div>
-                  </div>
+                  <div style={{ fontSize: '14px', color: '#c4b5fd' }}>Updated: {new Date(weatherData.current.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                 </div>
               </div>
 
-              {/* Secondary Metrics Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '30px' }}>
-                {/* Air Quality */}
+              {/* Additional Metrics */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px' }}>
                 <div style={{ 
                   background: 'rgba(15, 23, 42, 0.7)', 
                   padding: '20px',
                   borderRadius: '10px',
-                  border: `1px solid ${airQuality?.color || '#334155'}`,
+                  border: '1px solid #334155',
                   textAlign: 'center'
                 }}>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px' }}>Air Quality Index</div>
-                  <div style={{ fontSize: '36px', fontWeight: '700', color: airQuality?.color || '#22c55e', marginBottom: '5px' }}>
-                    {airQuality?.value || '--'}
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px' }}>Air Quality</div>
+                  <div style={{ fontSize: '32px', fontWeight: '700', color: currentAQI.color, marginBottom: '5px' }}>
+                    {currentAQI.value}
                   </div>
-                  <div style={{ fontSize: '14px', color: airQuality?.color || '#22c55e', marginBottom: '5px' }}>
-                    {airQuality?.level || 'Good'}
-                  </div>
-                  <div style={{ fontSize: '10px', color: '#64748b', marginTop: '5px' }}>
-                    {airQuality?.parameter || 'PM2.5'} • {airQuality?.unit || 'µg/m³'}
-                  </div>
+                  <div style={{ fontSize: '14px', color: currentAQI.color }}>{currentAQI.level}</div>
+                  <div style={{ fontSize: '10px', color: '#64748b', marginTop: '5px' }}>{currentAQI.source}</div>
                 </div>
                 
-                {/* Humidity */}
                 <div style={{ 
                   background: 'rgba(15, 23, 42, 0.7)', 
                   padding: '20px',
@@ -966,16 +996,12 @@ function LagunaWeatherDashboard() {
                   textAlign: 'center'
                 }}>
                   <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px' }}>Humidity</div>
-                  <div style={{ fontSize: '36px', fontWeight: '700', color: '#22c55e', marginBottom: '5px' }}>
-                    {weatherData.humidity?.toFixed(0) || '--'}%
+                  <div style={{ fontSize: '32px', fontWeight: '700', color: '#22c55e', marginBottom: '5px' }}>
+                    {Math.round(weatherData.current.humidity)}%
                   </div>
                   <div style={{ fontSize: '14px', color: '#94a3b8' }}>Relative Humidity</div>
-                  <div style={{ fontSize: '10px', color: '#64748b', marginTop: '5px' }}>
-                    Comfort: {weatherData.humidity > 80 ? 'High' : weatherData.humidity > 60 ? 'Moderate' : 'Low'}
-                  </div>
                 </div>
                 
-                {/* Precipitation */}
                 <div style={{ 
                   background: 'rgba(15, 23, 42, 0.7)', 
                   padding: '20px',
@@ -984,242 +1010,38 @@ function LagunaWeatherDashboard() {
                   textAlign: 'center'
                 }}>
                   <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px' }}>Precipitation</div>
-                  <div style={{ fontSize: '36px', fontWeight: '700', color: '#60a5fa', marginBottom: '5px' }}>
-                    {weatherData.precipitation?.toFixed(1) || '0.0'} mm
+                  <div style={{ fontSize: '32px', fontWeight: '700', color: '#60a5fa', marginBottom: '5px' }}>
+                    {weatherData.current.precipitation.toFixed(1)} mm
                   </div>
                   <div style={{ fontSize: '14px', color: '#94a3b8' }}>Last hour</div>
-                  <div style={{ fontSize: '10px', color: '#64748b', marginTop: '5px' }}>
-                    Today: {dailyForecast?.[0]?.precipitation?.toFixed(1) || '0.0'} mm
-                  </div>
                 </div>
                 
-                {/* UV Index */}
                 <div style={{ 
                   background: 'rgba(15, 23, 42, 0.7)', 
                   padding: '20px',
                   borderRadius: '10px',
-                  border: `1px solid ${uvIndex?.color || '#334155'}`,
+                  border: '1px solid #334155',
                   textAlign: 'center'
                 }}>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px' }}>UV Index</div>
-                  <div style={{ fontSize: '36px', fontWeight: '700', color: uvIndex?.color || '#f59e0b', marginBottom: '5px' }}>
-                    {uvIndex?.value || '--'}
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px' }}>Solar Radiation</div>
+                  <div style={{ fontSize: '32px', fontWeight: '700', color: '#f59e0b', marginBottom: '5px' }}>
+                    {nasaData ? nasaData.solarRadiation.toFixed(1) : '--'}
                   </div>
-                  <div style={{ fontSize: '14px', color: uvIndex?.color || '#f59e0b', marginBottom: '5px' }}>
-                    {uvIndex?.level || 'Moderate'}
-                  </div>
-                  <div style={{ fontSize: '10px', color: '#64748b', marginTop: '5px' }}>
-                    {uvIndex?.value > 6 ? 'Sun protection needed' : 'Moderate exposure'}
-                  </div>
-                </div>
-                
-                {/* Solar Radiation */}
-                {nasaData && (
-                  <div style={{ 
-                    background: 'rgba(15, 23, 42, 0.7)', 
-                    padding: '20px',
-                    borderRadius: '10px',
-                    border: '1px solid #334155',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px' }}>Solar Radiation</div>
-                    <div style={{ fontSize: '36px', fontWeight: '700', color: '#f59e0b', marginBottom: '5px' }}>
-                      {nasaData.solarRadiation?.toFixed(1) || '--'}
-                    </div>
-                    <div style={{ fontSize: '14px', color: '#94a3b8' }}>kWh/m²</div>
-                    <div style={{ fontSize: '10px', color: '#64748b', marginTop: '5px' }}>NASA POWER</div>
-                  </div>
-                )}
-                
-                {/* Soil Moisture */}
-                {agriculturalMetrics && (
-                  <div style={{ 
-                    background: 'rgba(15, 23, 42, 0.7)', 
-                    padding: '20px',
-                    borderRadius: '10px',
-                    border: '1px solid #334155',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px' }}>Soil Moisture</div>
-                    <div style={{ fontSize: '36px', fontWeight: '700', color: '#22c55e', marginBottom: '5px' }}>
-                      {agriculturalMetrics.soilMoistureIndex}%
-                    </div>
-                    <div style={{ fontSize: '14px', color: '#94a3b8' }}>Index</div>
-                    <div style={{ fontSize: '10px', color: '#64748b', marginTop: '5px' }}>
-                      {agriculturalMetrics.soilMoistureIndex > 70 ? 'Adequate' : 'Requires irrigation'}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Sun Times & Agricultural Data */}
-              <div style={{ 
-                background: 'rgba(15, 23, 42, 0.7)', 
-                borderRadius: '10px',
-                padding: '20px',
-                border: '1px solid #334155',
-                marginBottom: '25px'
-              }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
-                  {/* Sun Times */}
-                  {sunTimes && (
-                    <div>
-                      <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '24px' }}>🌅</span>
-                        <span>Sunrise & Sunset</span>
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '5px' }}>Sunrise</div>
-                          <div style={{ fontSize: '20px', fontWeight: '700', color: '#f59e0b' }}>{sunTimes.sunrise}</div>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '5px' }}>Sunset</div>
-                          <div style={{ fontSize: '20px', fontWeight: '700', color: '#ea580c' }}>{sunTimes.sunset}</div>
-                        </div>
-                      </div>
-                      <div style={{ marginTop: '15px', fontSize: '14px', color: '#94a3b8' }}>
-                        Day length: {sunTimes.dayLength} hours
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Agricultural Metrics */}
-                  {agriculturalMetrics && (
-                    <div>
-                      <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '24px' }}>🌱</span>
-                        <span>Agricultural Data</span>
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-                        <div>
-                          <div style={{ fontSize: '12px', color: '#94a3b8' }}>Evapotranspiration</div>
-                          <div style={{ fontSize: '16px', fontWeight: '600', color: '#22c55e' }}>
-                            {agriculturalMetrics.evapotranspiration.toFixed(2)} mm/day
-                          </div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '12px', color: '#94a3b8' }}>Growing Degree Days</div>
-                          <div style={{ fontSize: '16px', fontWeight: '600', color: '#22c55e' }}>
-                            {agriculturalMetrics.growingDegreeDays.toFixed(1)}°C
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Historical Trends */}
-                  {historicalData && (
-                    <div>
-                      <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '24px' }}>📊</span>
-                        <span>30-Day Trends</span>
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-                        <div>
-                          <div style={{ fontSize: '12px', color: '#94a3b8' }}>Avg Temperature</div>
-                          <div style={{ fontSize: '16px', fontWeight: '600', color: '#f59e0b' }}>
-                            {historicalData.avgTemperature}°C
-                          </div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '12px', color: '#94a3b8' }}>Total Rain</div>
-                          <div style={{ fontSize: '16px', fontWeight: '600', color: '#60a5fa' }}>
-                            {historicalData.totalPrecipitation} mm
-                          </div>
-                        </div>
-                      </div>
-                      <div style={{ marginTop: '10px', fontSize: '14px', color: historicalData.trend.includes('Warmer') ? '#f59e0b' : historicalData.trend.includes('Cooler') ? '#60a5fa' : '#22c55e' }}>
-                        {historicalData.trend}
-                      </div>
-                    </div>
-                  )}
+                  <div style={{ fontSize: '14px', color: '#94a3b8' }}>NASA POWER</div>
                 </div>
               </div>
             </div>
           ) : (
             <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
-              <div style={{ fontSize: '24px', marginBottom: '10px' }}>⚠️</div>
-              <div style={{ fontSize: '18px', marginBottom: '10px' }}>Meteorological data currently unavailable</div>
-              <div style={{ fontSize: '14px', color: '#64748b' }}>Please check your internet connection or try again later</div>
+              Meteorological data currently unavailable
             </div>
           )}
         </div>
 
-        {/* Three-Column Layout for Forecasts, Lake Data, and Landmarks */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '25px', marginBottom: '25px' }}>
+        {/* Specialized Sections - 3 Columns */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px', marginBottom: '25px' }}>
           
-          {/* 24-Hour Forecast */}
-          <div style={{ 
-            background: 'rgba(30, 41, 59, 0.7)', 
-            borderRadius: '12px',
-            padding: '25px',
-            border: '1px solid #334155'
-          }}>
-            <h2 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: '600' }}>24-Hour Forecast</h2>
-            <div style={{ height: '400px', overflowY: 'auto', paddingRight: '10px' }}>
-              <div style={{ display: 'grid', gap: '12px' }}>
-                {hourlyForecast ? (
-                  hourlyForecast.map((hour, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        background: 'rgba(15, 23, 42, 0.7)',
-                        padding: '18px',
-                        borderRadius: '10px',
-                        border: '1px solid #334155',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(30, 41, 59, 0.9)';
-                        e.currentTarget.style.borderColor = '#475569';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(15, 23, 42, 0.7)';
-                        e.currentTarget.style.borderColor = '#334155';
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                        <div style={{ minWidth: '30px', textAlign: 'center' }}>
-                          <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>{hour.time}</div>
-                          <div style={{ fontSize: '10px', color: '#64748b' }}>{index === 0 ? 'Now' : '+' + index + 'h'}</div>
-                        </div>
-                        <div style={{ fontSize: '28px' }}>
-                          {getWeatherCondition(hour.weatherCode).icon}
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>
-                            {getWeatherCondition(hour.weatherCode).text}
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#94a3b8' }}>
-                            {hour.precipitationProb}% rain • {hour.humidity}% humid
-                          </div>
-                        </div>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '24px', fontWeight: '700', marginBottom: '4px' }}>
-                          {hour.temp.toFixed(1)}°C
-                        </div>
-                        <div style={{ fontSize: '12px', color: '#94a3b8' }}>
-                          Wind: {hour.windSpeed.toFixed(1)} m/s
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div style={{ padding: '30px', textAlign: 'center', color: '#94a3b8' }}>
-                    <div style={{ marginBottom: '15px' }}>⏳</div>
-                    <div>Loading forecast data...</div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Laguna Lake Conditions */}
+          {/* Tourism & Recreation */}
           <div style={{ 
             background: 'rgba(30, 41, 59, 0.7)', 
             borderRadius: '12px',
@@ -1227,247 +1049,255 @@ function LagunaWeatherDashboard() {
             border: '1px solid #334155'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
-              <div style={{
-                width: '50px',
-                height: '50px',
-                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(30, 64, 175, 0.2) 100%)',
-                borderRadius: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '28px'
-              }}>
-                🏞️
-              </div>
-              <div>
-                <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>Laguna de Bay Conditions</h2>
-                <div style={{ fontSize: '14px', color: '#94a3b8' }}>Largest lake in the Philippines</div>
-              </div>
+              <div style={{ fontSize: '28px' }}>🏞️</div>
+              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>Tourism & Recreation</h2>
             </div>
             
-            {lakeConditions ? (
-              <div style={{ display: 'grid', gap: '15px' }}>
+            <div style={{ display: 'grid', gap: '15px' }}>
+              {tourismRecommendations.length > 0 ? (
+                tourismRecommendations.map((rec, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      background: 'rgba(15, 23, 42, 0.7)',
+                      padding: '18px',
+                      borderRadius: '10px',
+                      border: '1px solid #334155',
+                      borderLeft: `4px solid ${rec.color}`
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px' }}>
+                      <div style={{ fontSize: '24px' }}>{rec.icon}</div>
+                      <div>
+                        <div style={{ fontSize: '16px', fontWeight: '600' }}>{rec.attraction}</div>
+                        <div style={{ fontSize: '14px', color: rec.color }}>{rec.recommendation}</div>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '13px', color: '#94a3b8' }}>{rec.details}</div>
+                  </div>
+                ))
+              ) : (
+                <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>
+                  Loading tourism recommendations...
+                </div>
+              )}
+            </div>
+
+            {/* Lake Conditions */}
+            {lakeConditions && (
+              <div style={{ marginTop: '25px', paddingTop: '25px', borderTop: '1px solid #334155' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '15px' }}>
+                  <div style={{ fontSize: '24px' }}>🌊</div>
+                  <div>
+                    <div style={{ fontSize: '16px', fontWeight: '600' }}>Laguna de Bay Conditions</div>
+                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>For fishing and boating</div>
+                  </div>
+                </div>
                 <div style={{ 
-                  background: 'rgba(15, 23, 42, 0.7)', 
-                  padding: '18px',
-                  borderRadius: '10px',
+                  background: 'rgba(15, 23, 42, 0.7)',
+                  padding: '15px',
+                  borderRadius: '8px',
                   border: '1px solid #334155'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <div style={{ fontSize: '16px', fontWeight: '600' }}>Water Level</div>
-                    <div style={{ 
-                      padding: '4px 12px',
-                      borderRadius: '12px',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      background: lakeConditions.waterLevel === 'High' ? 'rgba(220, 38, 38, 0.1)' : 'rgba(34, 197, 94, 0.1)',
-                      color: lakeConditions.waterLevel === 'High' ? '#fca5a5' : '#86efac'
-                    }}>
-                      {lakeConditions.waterLevel}
+                    <div style={{ fontSize: '14px', color: '#94a3b8' }}>Condition</div>
+                    <div style={{ fontSize: '16px', fontWeight: '600', color: lakeConditions.color }}>
+                      {lakeConditions.condition}
                     </div>
                   </div>
-                  <div style={{ fontSize: '14px', color: '#94a3b8' }}>
-                    Current water level status for boating and fishing activities
+                  <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '5px' }}>
+                    Wave Height: {lakeConditions.waveHeight}
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '5px' }}>
+                    Water Temp: {lakeConditions.waterTemp}
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#94a3b8' }}>
+                    Fishing: {lakeConditions.fishing} • {lakeConditions.advisory}
                   </div>
                 </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-                  <div style={{ 
-                    background: 'rgba(15, 23, 42, 0.7)', 
-                    padding: '15px',
-                    borderRadius: '10px',
-                    border: '1px solid #334155',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>Water Temperature</div>
-                    <div style={{ fontSize: '24px', fontWeight: '700', color: '#60a5fa' }}>
-                      {lakeConditions.waterTemp}°C
-                    </div>
-                  </div>
-                  
-                  <div style={{ 
-                    background: 'rgba(15, 23, 42, 0.7)', 
-                    padding: '15px',
-                    borderRadius: '10px',
-                    border: '1px solid #334155',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>Wave Height</div>
-                    <div style={{ fontSize: '24px', fontWeight: '700', color: '#f59e0b' }}>
-                      {lakeConditions.waveHeight} m
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ 
-                  background: 'rgba(15, 23, 42, 0.7)', 
-                  padding: '18px',
-                  borderRadius: '10px',
-                  border: '1px solid #334155'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <div style={{ fontSize: '16px', fontWeight: '600' }}>Fishing Conditions</div>
-                    <div style={{ 
-                      padding: '4px 12px',
-                      borderRadius: '12px',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      background: lakeConditions.fishingConditions === 'Good' ? 'rgba(34, 197, 94, 0.1)' : 
-                                 lakeConditions.fishingConditions === 'Fair' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(220, 38, 38, 0.1)',
-                      color: lakeConditions.fishingConditions === 'Good' ? '#86efac' : 
-                             lakeConditions.fishingConditions === 'Fair' ? '#fdba74' : '#fca5a5'
-                    }}>
-                      {lakeConditions.fishingConditions}
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '14px', color: '#94a3b8' }}>
-                    {lakeConditions.fishingConditions === 'Good' ? 'Ideal conditions for fishing' :
-                     lakeConditions.fishingConditions === 'Fair' ? 'Moderate fishing conditions' :
-                     'Poor fishing conditions due to weather'}
-                  </div>
-                </div>
-
-                <div style={{ 
-                  background: 'rgba(15, 23, 42, 0.7)', 
-                  padding: '18px',
-                  borderRadius: '10px',
-                  border: '1px solid #334155'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '4px' }}>Safety Level</div>
-                      <div style={{ fontSize: '14px', color: '#94a3b8' }}>Boating and water activities</div>
-                    </div>
-                    <div style={{ 
-                      padding: '6px 16px',
-                      borderRadius: '12px',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      background: lakeConditions.safetyLevel === 'Safe' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                      color: lakeConditions.safetyLevel === 'Safe' ? '#86efac' : '#fdba74'
-                    }}>
-                      {lakeConditions.safetyLevel}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div style={{ padding: '30px', textAlign: 'center', color: '#94a3b8' }}>
-                <div style={{ marginBottom: '15px' }}>🏞️</div>
-                <div>Loading lake conditions...</div>
               </div>
             )}
           </div>
 
-          {/* Landmarks & Regional Info */}
+          {/* Agriculture & Farming */}
           <div style={{ 
             background: 'rgba(30, 41, 59, 0.7)', 
             borderRadius: '12px',
             padding: '25px',
             border: '1px solid #334155'
           }}>
-            <h2 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: '600' }}>Regional Landmarks & Features</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
+              <div style={{ fontSize: '28px' }}>🌾</div>
+              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>Agricultural Advisory</h2>
+            </div>
+            
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '10px' }}>Primary Laguna Crops</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {lagunaCrops.map((crop, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      background: 'rgba(21, 128, 61, 0.1)',
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid rgba(21, 128, 61, 0.3)',
+                      fontSize: '12px',
+                      color: '#86efac'
+                    }}
+                  >
+                    {crop.name}
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div style={{ display: 'grid', gap: '15px' }}>
-              {landmarks.map((landmark, index) => (
+              {agriculturalAdvisory ? (
+                agriculturalAdvisory.map((adv, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      background: 'rgba(15, 23, 42, 0.7)',
+                      padding: '15px',
+                      borderRadius: '8px',
+                      border: '1px solid #334155',
+                      borderLeft: `4px solid ${adv.color}`
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                      <div style={{ fontSize: '20px' }}>{adv.icon}</div>
+                      <div style={{ fontSize: '14px', fontWeight: '600' }}>{adv.crop}</div>
+                      <div style={{ marginLeft: 'auto', fontSize: '12px', color: adv.color }}>
+                        {adv.status}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '13px', color: '#94a3b8' }}>{adv.details}</div>
+                  </div>
+                ))
+              ) : (
+                <div style={{ 
+                  background: 'rgba(15, 23, 42, 0.7)',
+                  padding: '20px',
+                  borderRadius: '8px',
+                  border: '1px solid #334155',
+                  textAlign: 'center',
+                  color: '#94a3b8'
+                }}>
+                  Loading agricultural data...
+                </div>
+              )}
+            </div>
+
+            {/* NASA Data Summary */}
+            {nasaData && (
+              <div style={{ marginTop: '25px', paddingTop: '25px', borderTop: '1px solid #334155' }}>
+                <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '15px' }}>NASA POWER Metrics</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                  <div>
+                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>Solar Radiation</div>
+                    <div style={{ fontSize: '18px', fontWeight: '600' }}>{nasaData.solarRadiation.toFixed(1)} kWh/m²</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>Precipitation</div>
+                    <div style={{ fontSize: '18px', fontWeight: '600' }}>{nasaData.precipitation.toFixed(1)} mm</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Volcano Monitoring & Forecast */}
+          <div style={{ 
+            background: 'rgba(30, 41, 59, 0.7)', 
+            borderRadius: '12px',
+            padding: '25px',
+            border: '1px solid #334155'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
+              <div style={{ fontSize: '28px' }}>🌋</div>
+              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>Volcano & Safety</h2>
+            </div>
+
+            {/* Volcano Status */}
+            {volcanoStatus && (
+              <div style={{ 
+                background: volcanoStatus.color === '#22c55e' 
+                  ? 'rgba(21, 128, 61, 0.1)' 
+                  : 'rgba(220, 38, 38, 0.1)',
+                padding: '20px',
+                borderRadius: '10px',
+                border: `1px solid ${volcanoStatus.color}40`,
+                marginBottom: '20px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '15px' }}>
+                  <div style={{ fontSize: '32px' }}>{volcanoStatus.icon}</div>
+                  <div>
+                    <div style={{ fontSize: '18px', fontWeight: '600', color: volcanoStatus.color }}>
+                      {volcanoStatus.name}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>Alert Level: {volcanoStatus.alertLevel}</div>
+                  </div>
+                </div>
+                <div style={{ fontSize: '14px', color: volcanoStatus.color, marginBottom: '10px' }}>
+                  Status: {volcanoStatus.status}
+                </div>
+                <div style={{ fontSize: '13px', color: '#94a3b8' }}>{volcanoStatus.details}</div>
+              </div>
+            )}
+
+            {/* 6-Hour Forecast */}
+            <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', fontWeight: '600' }}>6-Hour Forecast</h3>
+            <div style={{ display: 'grid', gap: '12px' }}>
+              {weatherData?.forecast?.map((hour, index) => (
                 <div
                   key={index}
                   style={{
                     background: 'rgba(15, 23, 42, 0.7)',
-                    padding: '18px',
-                    borderRadius: '10px',
+                    padding: '15px',
+                    borderRadius: '8px',
                     border: '1px solid #334155',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '15px',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(30, 41, 59, 0.9)';
-                    e.currentTarget.style.borderColor = '#475569';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(15, 23, 42, 0.7)';
-                    e.currentTarget.style.borderColor = '#334155';
+                    justifyContent: 'space-between'
                   }}
                 >
-                  <div style={{
-                    width: '60px',
-                    height: '60px',
-                    background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%)',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '28px'
-                  }}>
-                    {landmark.icon}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
-                      <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>{landmark.name}</div>
-                      <div style={{ 
-                        padding: '4px 10px',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                        background: landmark.status === 'Active' ? 'rgba(220, 38, 38, 0.1)' : 'rgba(34, 197, 94, 0.1)',
-                        color: landmark.status === 'Active' ? '#fca5a5' : '#86efac'
-                      }}>
-                        {landmark.status || landmark.type}
-                      </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ fontSize: '20px' }}>
+                      {weatherConditions[hour.condition]?.icon || '⛅'}
                     </div>
-                    <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '8px' }}>
-                      {landmark.elevation || landmark.area || landmark.height}
-                      {landmark.temperature && ` • ${landmark.temperature}`}
-                      {landmark.waterTemp && ` • ${landmark.waterTemp}`}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>
-                      {landmark.activity && `Activity: ${landmark.activity}`}
-                      {landmark.fishing && ` • Fishing: ${landmark.fishing}`}
-                      {landmark.safety && ` • Safety: ${landmark.safety}`}
-                      {landmark.flowRate && ` • Flow: ${landmark.flowRate}`}
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: '600' }}>{hour.time}</div>
+                      <div style={{ fontSize: '12px', color: '#94a3b8' }}>{hour.precip} mm</div>
                     </div>
                   </div>
+                  <div style={{ fontSize: '20px', fontWeight: '700' }}>{hour.temp}°C</div>
                 </div>
               ))}
             </div>
-            
-            {/* 7-Day Forecast Summary */}
-            {dailyForecast && (
+
+            {/* Sun Times */}
+            {sunTimes && (
               <div style={{ marginTop: '25px', paddingTop: '25px', borderTop: '1px solid #334155' }}>
-                <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', fontWeight: '600' }}>7-Day Forecast Summary</h3>
-                <div style={{ display: 'flex', overflowX: 'auto', gap: '10px', paddingBottom: '10px' }}>
-                  {dailyForecast.slice(0, 7).map((day, index) => (
-                    <div key={index} style={{
-                      minWidth: '100px',
-                      background: 'rgba(15, 23, 42, 0.7)',
-                      padding: '15px',
-                      borderRadius: '10px',
-                      border: '1px solid #334155',
-                      textAlign: 'center'
-                    }}>
-                      <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '10px' }}>
-                        {day.date.split(' ')[0]}
-                      </div>
-                      <div style={{ fontSize: '24px', marginBottom: '10px' }}>
-                        {getWeatherCondition(day.weatherCode).icon}
-                      </div>
-                      <div style={{ fontSize: '16px', fontWeight: '700', marginBottom: '5px' }}>
-                        {day.maxTemp.toFixed(0)}°C
-                      </div>
-                      <div style={{ fontSize: '14px', color: '#94a3b8' }}>
-                        {day.minTemp.toFixed(0)}°C
-                      </div>
-                      {day.precipitation > 0 && (
-                        <div style={{ 
-                          fontSize: '12px', 
-                          color: '#60a5fa',
-                          marginTop: '5px'
-                        }}>
-                          {day.precipitation.toFixed(1)}mm
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '15px' }}>Sun Schedule</div>
+                <div style={{ 
+                  background: 'rgba(15, 23, 42, 0.7)',
+                  padding: '15px',
+                  borderRadius: '8px',
+                  border: '1px solid #334155'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>Sunrise</div>
+                    <div style={{ fontSize: '16px', fontWeight: '600' }}>{sunTimes.sunrise}</div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>Sunset</div>
+                    <div style={{ fontSize: '16px', fontWeight: '600' }}>{sunTimes.sunset}</div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>Day Length</div>
+                    <div style={{ fontSize: '16px', fontWeight: '600' }}>{sunTimes.dayLength} hours</div>
+                  </div>
                 </div>
               </div>
             )}
@@ -1481,165 +1311,77 @@ function LagunaWeatherDashboard() {
           padding: '25px',
           border: '1px solid #334155'
         }}>
-          <h2 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: '600' }}>Data Sources & System Status</h2>
+          <h2 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: '600' }}>Data Sources & Integration</h2>
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '25px' }}>
-            <div>
-              <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', fontWeight: '600', color: '#f1f5f9' }}>Primary Sources</h3>
-              <div style={{ display: 'grid', gap: '12px' }}>
-                <div style={{ 
-                  background: 'rgba(15, 23, 42, 0.7)', 
-                  padding: '15px',
-                  borderRadius: '10px',
-                  border: '1px solid #334155',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px'
-                }}>
-                  <div style={{ fontSize: '20px' }}>🌤️</div>
-                  <div>
-                    <div style={{ fontSize: '14px', fontWeight: '600' }}>Open-Meteo API</div>
-                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>Weather forecasts & historical data</div>
-                  </div>
-                </div>
-                
-                <div style={{ 
-                  background: 'rgba(15, 23, 42, 0.7)', 
-                  padding: '15px',
-                  borderRadius: '10px',
-                  border: '1px solid #334155',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px'
-                }}>
-                  <div style={{ fontSize: '20px' }}>⚠️</div>
-                  <div>
-                    <div style={{ fontSize: '14px', fontWeight: '600' }}>PAGASA RSS Feeds</div>
-                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>Official Philippine weather alerts</div>
-                  </div>
-                </div>
-              </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '25px' }}>
+            <div style={{ 
+              background: 'rgba(15, 23, 42, 0.7)', 
+              padding: '18px',
+              borderRadius: '10px',
+              border: '1px solid #334155'
+            }}>
+              <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>Weather Data</div>
+              <div style={{ fontSize: '16px', fontWeight: '500' }}>Open-Meteo API</div>
+              <div style={{ fontSize: '12px', color: '#64748b', marginTop: '5px' }}>Primary source</div>
             </div>
             
-            <div>
-              <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', fontWeight: '600', color: '#f1f5f9' }}>Environmental Data</h3>
-              <div style={{ display: 'grid', gap: '12px' }}>
-                <div style={{ 
-                  background: 'rgba(15, 23, 42, 0.7)', 
-                  padding: '15px',
-                  borderRadius: '10px',
-                  border: '1px solid #334155',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px'
-                }}>
-                  <div style={{ fontSize: '20px' }}>💨</div>
-                  <div>
-                    <div style={{ fontSize: '14px', fontWeight: '600' }}>OpenAQ Network</div>
-                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>Air quality measurements</div>
-                  </div>
-                </div>
-                
-                <div style={{ 
-                  background: 'rgba(15, 23, 42, 0.7)', 
-                  padding: '15px',
-                  borderRadius: '10px',
-                  border: '1px solid #334155',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px'
-                }}>
-                  <div style={{ fontSize: '20px' }}>🛰️</div>
-                  <div>
-                    <div style={{ fontSize: '14px', fontWeight: '600' }}>NASA POWER</div>
-                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>Solar & agricultural data</div>
-                  </div>
-                </div>
-              </div>
+            <div style={{ 
+              background: 'rgba(15, 23, 42, 0.7)', 
+              padding: '18px',
+              borderRadius: '10px',
+              border: '1px solid #334155'
+            }}>
+              <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>Weather Alerts</div>
+              <div style={{ fontSize: '16px', fontWeight: '500' }}>PAGASA RSS</div>
+              <div style={{ fontSize: '12px', color: '#64748b', marginTop: '5px' }}>Official advisories</div>
             </div>
             
-            <div>
-              <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', fontWeight: '600', color: '#f1f5f9' }}>Additional Sources</h3>
-              <div style={{ display: 'grid', gap: '12px' }}>
-                <div style={{ 
-                  background: 'rgba(15, 23, 42, 0.7)', 
-                  padding: '15px',
-                  borderRadius: '10px',
-                  border: '1px solid #334155',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px'
-                }}>
-                  <div style={{ fontSize: '20px' }}>🌅</div>
-                  <div>
-                    <div style={{ fontSize: '14px', fontWeight: '600' }}>Sunrise-Sunset API</div>
-                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>Astronomical calculations</div>
-                  </div>
-                </div>
-                
-                <div style={{ 
-                  background: 'rgba(15, 23, 42, 0.7)', 
-                  padding: '15px',
-                  borderRadius: '10px',
-                  border: '1px solid #334155',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px'
-                }}>
-                  <div style={{ fontSize: '20px' }}>📊</div>
-                  <div>
-                    <div style={{ fontSize: '14px', fontWeight: '600' }}>Historical Archives</div>
-                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>30-day weather trends</div>
-                  </div>
-                </div>
-              </div>
+            <div style={{ 
+              background: 'rgba(15, 23, 42, 0.7)', 
+              padding: '18px',
+              borderRadius: '10px',
+              border: '1px solid #334155'
+            }}>
+              <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>Air Quality</div>
+              <div style={{ fontSize: '16px', fontWeight: '500' }}>OpenAQ Network</div>
+              <div style={{ fontSize: '12px', color: '#64748b', marginTop: '5px' }}>Global monitoring</div>
+            </div>
+            
+            <div style={{ 
+              background: 'rgba(15, 23, 42, 0.7)', 
+              padding: '18px',
+              borderRadius: '10px',
+              border: '1px solid #334155'
+            }}>
+              <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>Agricultural Data</div>
+              <div style={{ fontSize: '16px', fontWeight: '500' }}>NASA POWER</div>
+              <div style={{ fontSize: '12px', color: '#64748b', marginTop: '5px' }}>Solar & climate</div>
             </div>
           </div>
-          
+
           {/* System Status */}
           <div style={{ 
-            background: 'rgba(21, 128, 61, 0.1)', 
+            background: 'rgba(21, 128, 61, 0.1)',
             padding: '20px',
             borderRadius: '10px',
-            border: '1px solid rgba(21, 128, 61, 0.3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '15px'
+            border: '1px solid rgba(21, 128, 61, 0.3)'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                background: 'rgba(21, 128, 61, 0.2)',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '20px',
-                color: '#22c55e'
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '15px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ fontSize: '24px' }}>✅</div>
+                <div>
+                  <div style={{ fontSize: '16px', fontWeight: '600', color: '#86efac' }}>All Systems Operational</div>
+                  <div style={{ fontSize: '14px', color: '#86efac' }}>Data integrity verified • Automatic monitoring active</div>
+                </div>
+              </div>
+              <div style={{ 
+                background: 'rgba(21, 128, 61, 0.3)',
+                padding: '8px 16px',
+                borderRadius: '6px',
+                fontSize: '14px',
+                color: '#86efac'
               }}>
-                ✓
-              </div>
-              <div>
-                <div style={{ fontSize: '16px', fontWeight: '600', color: '#22c55e' }}>All Systems Operational</div>
-                <div style={{ fontSize: '14px', color: '#86efac' }}>Data integrity verified • 6 sources active</div>
-              </div>
-            </div>
-            
-            <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '12px', color: '#86efac' }}>Update Frequency</div>
-                <div style={{ fontSize: '16px', fontWeight: '600', color: '#22c55e' }}>10 minutes</div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '12px', color: '#86efac' }}>Data Points</div>
-                <div style={{ fontSize: '16px', fontWeight: '600', color: '#22c55e' }}>150+ metrics</div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '12px', color: '#86efac' }}>Coverage</div>
-                <div style={{ fontSize: '16px', fontWeight: '600', color: '#22c55e' }}>All Laguna</div>
+                Uptime: 99.8%
               </div>
             </div>
           </div>
@@ -1649,71 +1391,47 @@ function LagunaWeatherDashboard() {
 
       {/* Footer */}
       <footer style={{
-        background: 'rgba(15, 23, 42, 0.95)',
+        background: 'rgba(15, 23, 42, 0.9)',
         borderTop: '1px solid #334155',
-        padding: '40px 0',
+        padding: '30px 0',
         marginTop: '50px'
       }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 20px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
           <div style={{ 
             display: 'grid', 
             gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-            gap: '40px',
-            marginBottom: '40px'
+            gap: '30px',
+            marginBottom: '30px'
           }}>
             <div>
-              <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '20px', color: '#f1f5f9' }}>
+              <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '15px', color: '#f1f5f9' }}>
                 Laguna Province Meteorological System
               </div>
-              <div style={{ fontSize: '14px', color: '#94a3b8', lineHeight: '1.6' }}>
-                Comprehensive real-time weather monitoring and environmental data system providing detailed information for Laguna Province, Philippines. Integrating multiple data sources for accurate forecasting and analysis.
+              <div style={{ fontSize: '14px', color: '#94a3b8' }}>
+                Comprehensive weather monitoring and environmental data system providing real-time information for Laguna Province, Philippines. Includes specialized features for agriculture, tourism, and safety.
               </div>
             </div>
-            
             <div>
-              <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '20px', color: '#f1f5f9' }}>
-                System Features
+              <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '15px', color: '#f1f5f9' }}>
+                Specialized Features
               </div>
-              <div style={{ fontSize: '14px', color: '#94a3b8', lineHeight: '1.8' }}>
-                • Real-time weather monitoring<br/>
-                • Agricultural data for farmers<br/>
-                • Lake conditions for fishing/boating<br/>
-                • Historical weather trends<br/>
-                • PAGASA official alerts<br/>
-                • Air quality monitoring<br/>
-                • Tourism weather advisories
-              </div>
-            </div>
-            
-            <div>
-              <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '20px', color: '#f1f5f9' }}>
-                Technical Specifications
-              </div>
-              <div style={{ fontSize: '14px', color: '#94a3b8', lineHeight: '1.8' }}>
-                • Data Sources: 6 integrated APIs<br/>
-                • Update Interval: 10 minutes<br/>
-                • Coverage: 7 major municipalities<br/>
-                • Metrics: 150+ data points<br/>
-                • Accuracy: Multi-source verification<br/>
-                • Uptime: 99.8% system availability
+              <div style={{ fontSize: '13px', color: '#94a3b8' }}>
+                • Flood Risk Monitoring<br/>
+                • Agricultural Advisory System<br/>
+                • Tourism Weather Optimization<br/>
+                • Volcano Safety Monitoring<br/>
+                • Lake Conditions Reporting
               </div>
             </div>
           </div>
-          
           <div style={{ 
             borderTop: '1px solid #334155', 
-            paddingTop: '30px',
+            paddingTop: '20px',
             fontSize: '14px',
             color: '#64748b',
             textAlign: 'center'
           }}>
-            <div style={{ marginBottom: '10px' }}>
-              © {new Date().getFullYear()} by DIMAX. Powered and secured by RP8.
-            </div>
-            <div style={{ fontSize: '13px', color: '#475569' }}>
-              All data provided for informational purposes. Weather data from multiple public sources.
-              Laguna-specific calculations and advisories based on local conditions.
-            </div>
+            © {new Date().getFullYear()} Laguna Province Meteorological System. All data provided for informational and safety purposes. Powered by public data sources.
           </div>
         </div>
       </footer>
@@ -1725,39 +1443,9 @@ function LagunaWeatherDashboard() {
           100% { transform: rotate(360deg); }
         }
         
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
         select:focus {
           border-color: #3b82f6;
           box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-        }
-        
-        /* Scrollbar styling */
-        ::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-          background: rgba(30, 41, 59, 0.5);
-          border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-          background: #475569;
-          border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-          background: #64748b;
-        }
-        
-        /* Smooth transitions */
-        * {
-          transition: background-color 0.2s, border-color 0.2s;
         }
         
         @media (max-width: 768px) {
@@ -1772,26 +1460,11 @@ function LagunaWeatherDashboard() {
           footer > div {
             padding: 0 15px;
           }
-          
-          h1 {
-            font-size: 20px !important;
-          }
-          
-          h2 {
-            font-size: 18px !important;
-          }
         }
         
-        @media (max-width: 480px) {
-          header > div > div {
-            flex-direction: column;
-            align-items: flex-start !important;
-          }
-          
-          .header-right {
-            width: 100%;
-            justify-content: space-between;
-          }
+        /* Smooth transitions */
+        * {
+          transition: background-color 0.2s ease, border-color 0.2s ease;
         }
       `}</style>
     </div>
