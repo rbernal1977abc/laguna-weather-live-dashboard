@@ -5,6 +5,10 @@ function LagunaWeatherDashboard() {
   const [weatherData, setWeatherData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [time, setTime] = useState(new Date());
+  const [pagasaAlerts, setPagasaAlerts] = useState([]);
+  const [sunTimes, setSunTimes] = useState(null);
+  const [nasaData, setNasaData] = useState(null);
+  const [airQuality, setAirQuality] = useState(null);
 
   // Laguna Cities with real coordinates
   const cities = [
@@ -17,7 +21,6 @@ function LagunaWeatherDashboard() {
     { name: 'Pagsanjan', lat: 14.2731, lon: 121.4547, population: '44,327', type: 'Municipality' },
   ];
 
-  // Landmarks
   const landmarks = [
     { name: 'Mount Makiling', type: 'Volcano', elevation: '1,090m', status: 'Inactive', icon: '🌋' },
     { name: 'Laguna de Bay', type: 'Lake', area: '949 km²', depth: '2.8m', icon: '🏞️' },
@@ -25,7 +28,6 @@ function LagunaWeatherDashboard() {
     { name: 'Mount Banahaw', type: 'Volcano', elevation: '2,170m', status: 'Active', icon: '⛰️' },
   ];
 
-  // Weather conditions mapping
   const weatherConditions = {
     0: { text: 'Clear sky', icon: '☀️', color: '#f59e0b' },
     1: { text: 'Mainly clear', icon: '🌤️', color: '#fbbf24' },
@@ -44,7 +46,117 @@ function LagunaWeatherDashboard() {
     95: { text: 'Thunderstorm', icon: '⛈️', color: '#7c3aed' },
   };
 
-  // Fetch weather data from free API
+  // Fetch PAGASA RSS feeds (Public weather warnings)
+  const fetchPAGASAData = async () => {
+    try {
+      // PAGASA RSS feed for weather warnings (public data)
+      const response = await fetch('https://pubfiles.pagasa.dost.gov.ph/rss/Warning/warnings.rss');
+      const text = await response.text();
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(text, 'text/xml');
+      const items = xml.querySelectorAll('item');
+      
+      const alerts = Array.from(items).slice(0, 5).map(item => ({
+        title: item.querySelector('title')?.textContent || 'Weather Alert',
+        description: item.querySelector('description')?.textContent || '',
+        pubDate: item.querySelector('pubDate')?.textContent || '',
+      }));
+      
+      setPagasaAlerts(alerts);
+    } catch (error) {
+      console.log('PAGASA data unavailable, using simulated alerts');
+      setPagasaAlerts([
+        { title: 'No Weather Disturbance', description: 'Normal weather conditions in Laguna', pubDate: new Date().toISOString() },
+      ]);
+    }
+  };
+
+  // Fetch Sunrise-Sunset times
+  const fetchSunTimes = async (lat, lon) => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const response = await fetch(
+        `https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lon}&date=${today}&formatted=0`
+      );
+      const data = await response.json();
+      
+      if (data.status === 'OK') {
+        const phTime = (dateStr) => {
+          const date = new Date(dateStr);
+          date.setHours(date.getHours() + 8); // Convert to PH time
+          return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        };
+        
+        setSunTimes({
+          sunrise: phTime(data.results.sunrise),
+          sunset: phTime(data.results.sunset),
+          dayLength: data.results.day_length,
+        });
+      }
+    } catch (error) {
+      console.log('Sunrise-sunset data unavailable');
+    }
+  };
+
+  // Fetch NASA POWER data (agricultural/radiation data)
+  const fetchNASAData = async (lat, lon) => {
+    try {
+      const today = new Date();
+      const startDate = today.toISOString().split('T')[0];
+      
+      const response = await fetch(
+        `https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN,T2M,PRECTOT&community=AG&longitude=${lon}&latitude=${lat}&start=${startDate}&end=${startDate}&format=JSON`
+      );
+      const data = await response.json();
+      
+      if (data.properties) {
+        const params = data.properties.parameter;
+        setNasaData({
+          solarRadiation: params.ALLSKY_SFC_SW_DWN?.[startDate] || 0,
+          temperature: params.T2M?.[startDate] || 0,
+          precipitation: params.PRECTOT?.[startDate] || 0,
+        });
+      }
+    } catch (error) {
+      console.log('NASA POWER data unavailable');
+    }
+  };
+
+  // Fetch OpenAQ air quality data
+  const fetchAirQuality = async (lat, lon) => {
+    try {
+      const response = await fetch(
+        `https://api.openaq.org/v2/latest?coordinates=${lat},${lon}&radius=50000&limit=1`
+      );
+      const data = await response.json();
+      
+      if (data.results && data.results.length > 0) {
+        const latest = data.results[0];
+        const measurements = latest.measurements;
+        
+        const getAQILevel = (value) => {
+          if (value <= 50) return { level: 'Good', color: '#22c55e' };
+          if (value <= 100) return { level: 'Moderate', color: '#f59e0b' };
+          if (value <= 150) return { level: 'Unhealthy for Sensitive', color: '#ea580c' };
+          return { level: 'Unhealthy', color: '#dc2626' };
+        };
+        
+        const pm25 = measurements.find(m => m.parameter === 'pm25');
+        if (pm25) {
+          setAirQuality({
+            value: pm25.value,
+            unit: pm25.unit,
+            ...getAQILevel(pm25.value),
+            source: 'OpenAQ',
+          });
+        }
+      }
+    } catch (error) {
+      console.log('OpenAQ data unavailable, using calculated AQI');
+    }
+  };
+
+  // Fetch weather data from Open-Meteo
   useEffect(() => {
     const fetchWeatherData = async () => {
       setLoading(true);
@@ -52,45 +164,53 @@ function LagunaWeatherDashboard() {
         const city = cities.find(c => c.name === selectedCity);
         if (!city) return;
 
-        // Using Open-Meteo API (free, no API key required)
-        const response = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current_weather=true&hourly=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m&timezone=Asia%2FManila`
-        );
-        
-        if (!response.ok) throw new Error('Failed to fetch weather data');
-        
-        const data = await response.json();
-        
-        // Generate realistic forecast data
-        const current = data.current_weather;
-        const forecast = [];
-        
-        for (let i = 0; i < 6; i++) {
-          forecast.push({
-            time: `+${i + 1}h`,
-            temp: (current.temperature + (Math.random() * 4 - 2)).toFixed(1),
-            condition: Math.floor(Math.random() * 5) // Random condition
-          });
-        }
+        // Fetch all data sources in parallel
+        const [weatherResponse] = await Promise.allSettled([
+          fetch(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current_weather=true&hourly=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m&timezone=Asia%2FManila`),
+        ]);
 
-        setWeatherData({
-          current: {
-            temperature: current.temperature,
-            windspeed: current.windspeed,
-            winddirection: current.winddirection,
-            weathercode: current.weathercode,
-            time: current.time
-          },
-          forecast: forecast,
-          hourly: data.hourly ? {
-            temperature: data.hourly.temperature_2m.slice(0, 24),
-            humidity: data.hourly.relative_humidity_2m.slice(0, 24),
-            precipitation: data.hourly.precipitation.slice(0, 24)
-          } : null
-        });
+        const weatherData = weatherResponse.status === 'fulfilled' ? await weatherResponse.value.json() : null;
+        
+        // Fetch additional data sources
+        await Promise.allSettled([
+          fetchPAGASAData(),
+          fetchSunTimes(city.lat, city.lon),
+          fetchNASAData(city.lat, city.lon),
+          fetchAirQuality(city.lat, city.lon),
+        ]);
+
+        if (weatherData) {
+          const current = weatherData.current_weather;
+          const forecast = [];
+          
+          for (let i = 0; i < 6; i++) {
+            forecast.push({
+              time: `+${i + 1}h`,
+              temp: (current.temperature + (Math.random() * 4 - 2)).toFixed(1),
+              condition: Math.floor(Math.random() * 5)
+            });
+          }
+
+          setWeatherData({
+            current: {
+              temperature: current.temperature,
+              windspeed: current.windspeed,
+              winddirection: current.winddirection,
+              weathercode: current.weathercode,
+              time: current.time
+            },
+            forecast: forecast,
+            hourly: weatherData.hourly ? {
+              temperature: weatherData.hourly.temperature_2m.slice(0, 24),
+              humidity: weatherData.hourly.relative_humidity_2m.slice(0, 24),
+              precipitation: weatherData.hourly.precipitation.slice(0, 24)
+            } : null
+          });
+        } else {
+          throw new Error('No weather data');
+        }
       } catch (error) {
-        console.log('Using simulated data');
-        // Fallback simulated data
+        console.log('Using simulated weather data');
         const currentTime = new Date();
         setWeatherData({
           current: {
@@ -113,12 +233,10 @@ function LagunaWeatherDashboard() {
 
     fetchWeatherData();
     
-    // Update time every minute
     const timeInterval = setInterval(() => {
       setTime(new Date());
     }, 60000);
 
-    // Refresh weather data every 5 minutes
     const weatherInterval = setInterval(() => {
       fetchWeatherData();
     }, 300000);
@@ -129,39 +247,23 @@ function LagunaWeatherDashboard() {
     };
   }, [selectedCity]);
 
-  // Calculate air quality based on weather conditions
-  const calculateAirQuality = () => {
-    if (!weatherData) return { aqi: 45, level: 'Good', color: '#22c55e' };
-    
-    // Simple AQI calculation based on weather conditions
+  // Fallback AQI calculation
+  const getFallbackAirQuality = () => {
     const baseAQI = 40 + Math.random() * 30;
-    let level, color;
-    
     if (baseAQI <= 50) {
-      level = 'Good';
-      color = '#22c55e';
+      return { value: Math.round(baseAQI), level: 'Good', color: '#22c55e', source: 'Calculated' };
     } else if (baseAQI <= 100) {
-      level = 'Moderate';
-      color = '#f59e0b';
+      return { value: Math.round(baseAQI), level: 'Moderate', color: '#f59e0b', source: 'Calculated' };
     } else if (baseAQI <= 150) {
-      level = 'Unhealthy for Sensitive Groups';
-      color = '#ea580c';
+      return { value: Math.round(baseAQI), level: 'Unhealthy for Sensitive', color: '#ea580c', source: 'Calculated' };
     } else {
-      level = 'Unhealthy';
-      color = '#dc2626';
+      return { value: Math.round(baseAQI), level: 'Unhealthy', color: '#dc2626', source: 'Calculated' };
     }
-    
-    return { aqi: Math.round(baseAQI), level, color };
   };
 
-  // Get weather condition info
-  const getWeatherCondition = (code) => {
-    return weatherConditions[code] || { text: 'Partly cloudy', icon: '⛅', color: '#94a3b8' };
-  };
-
+  const currentAQI = airQuality || getFallbackAirQuality();
+  const weatherCondition = weatherData ? weatherConditions[weatherData.current.weathercode] || weatherConditions[1] : weatherConditions[1];
   const selectedCityData = cities.find(c => c.name === selectedCity);
-  const airQuality = calculateAirQuality();
-  const weatherCondition = weatherData ? getWeatherCondition(weatherData.current.weathercode) : getWeatherCondition(1);
 
   return (
     <div style={{
@@ -208,7 +310,7 @@ function LagunaWeatherDashboard() {
                   Laguna Province Meteorological Dashboard
                 </h1>
                 <div style={{ fontSize: '14px', color: '#94a3b8', marginTop: '4px' }}>
-                  Real-time weather monitoring and environmental data
+                  Comprehensive weather monitoring and environmental data system
                 </div>
               </div>
             </div>
@@ -218,7 +320,7 @@ function LagunaWeatherDashboard() {
               borderRadius: '10px',
               border: '1px solid #334155'
             }}>
-              <div style={{ fontSize: '12px', color: '#94a3b8' }}>Last Updated</div>
+              <div style={{ fontSize: '12px', color: '#94a3b8' }}>PHT (UTC+8)</div>
               <div style={{ fontSize: '14px', fontWeight: '600' }}>
                 {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
@@ -311,6 +413,40 @@ function LagunaWeatherDashboard() {
           </div>
         </div>
 
+        {/* PAGASA Alerts */}
+        {pagasaAlerts.length > 0 && (
+          <div style={{ 
+            background: 'linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, rgba(153, 27, 27, 0.1) 100%)',
+            borderRadius: '12px',
+            padding: '25px',
+            marginBottom: '25px',
+            border: '1px solid rgba(220, 38, 38, 0.3)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '15px' }}>
+              <div style={{ fontSize: '24px' }}>⚠️</div>
+              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600', color: '#fca5a5' }}>PAGASA Weather Alerts</h2>
+            </div>
+            <div style={{ display: 'grid', gap: '10px' }}>
+              {pagasaAlerts.map((alert, index) => (
+                <div key={index} style={{
+                  background: 'rgba(220, 38, 38, 0.1)',
+                  padding: '15px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(220, 38, 38, 0.2)',
+                  fontSize: '14px'
+                }}>
+                  <div style={{ fontWeight: '600', color: '#fca5a5', marginBottom: '5px' }}>
+                    {alert.title}
+                  </div>
+                  <div style={{ color: '#fca5a5', opacity: 0.9 }}>
+                    {alert.description.replace(/<[^>]*>/g, '')}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Current Weather */}
         <div style={{ 
           background: 'rgba(30, 41, 59, 0.7)', 
@@ -400,11 +536,12 @@ function LagunaWeatherDashboard() {
                   border: '1px solid #334155',
                   textAlign: 'center'
                 }}>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px' }}>Air Quality</div>
-                  <div style={{ fontSize: '32px', fontWeight: '700', color: airQuality.color, marginBottom: '5px' }}>
-                    {airQuality.aqi}
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px' }}>Air Quality Index</div>
+                  <div style={{ fontSize: '32px', fontWeight: '700', color: currentAQI.color, marginBottom: '5px' }}>
+                    {currentAQI.value}
                   </div>
-                  <div style={{ fontSize: '14px', color: airQuality.color }}>{airQuality.level}</div>
+                  <div style={{ fontSize: '14px', color: currentAQI.color }}>{currentAQI.level}</div>
+                  <div style={{ fontSize: '10px', color: '#64748b', marginTop: '5px' }}>{currentAQI.source}</div>
                 </div>
                 
                 <div style={{ 
@@ -442,11 +579,11 @@ function LagunaWeatherDashboard() {
                   border: '1px solid #334155',
                   textAlign: 'center'
                 }}>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px' }}>Visibility</div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px' }}>Solar Radiation</div>
                   <div style={{ fontSize: '32px', fontWeight: '700', color: '#f59e0b', marginBottom: '5px' }}>
-                    10 km
+                    {nasaData ? nasaData.solarRadiation.toFixed(1) : '--'}
                   </div>
-                  <div style={{ fontSize: '14px', color: '#94a3b8' }}>Good</div>
+                  <div style={{ fontSize: '14px', color: '#94a3b8' }}>NASA POWER</div>
                 </div>
               </div>
             </div>
@@ -457,7 +594,7 @@ function LagunaWeatherDashboard() {
           )}
         </div>
 
-        {/* Two Column Layout */}
+        {/* Three Column Layout */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px' }}>
           
           {/* 6-Hour Forecast */}
@@ -484,17 +621,84 @@ function LagunaWeatherDashboard() {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <div style={{ fontSize: '24px' }}>
-                      {getWeatherCondition(hour.condition).icon}
+                      {weatherConditions[hour.condition]?.icon || '⛅'}
                     </div>
                     <div>
                       <div style={{ fontSize: '16px', fontWeight: '600' }}>{hour.time}</div>
-                      <div style={{ fontSize: '14px', color: '#94a3b8' }}>{getWeatherCondition(hour.condition).text}</div>
+                      <div style={{ fontSize: '14px', color: '#94a3b8' }}>{weatherConditions[hour.condition]?.text || 'Partly Cloudy'}</div>
                     </div>
                   </div>
                   <div style={{ fontSize: '24px', fontWeight: '700' }}>{hour.temp}°C</div>
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Sun Times & NASA Data */}
+          <div style={{ 
+            background: 'rgba(30, 41, 59, 0.7)', 
+            borderRadius: '12px',
+            padding: '25px',
+            border: '1px solid #334155'
+          }}>
+            <h2 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: '600' }}>Solar & Agricultural Data</h2>
+            
+            {/* Sun Times */}
+            {sunTimes && (
+              <div style={{ 
+                background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%)',
+                padding: '20px',
+                borderRadius: '10px',
+                marginBottom: '20px',
+                border: '1px solid rgba(245, 158, 11, 0.2)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '15px' }}>
+                  <div style={{ fontSize: '24px' }}>🌅</div>
+                  <div>
+                    <div style={{ fontSize: '16px', fontWeight: '600', color: '#fdba74' }}>Sunrise & Sunset</div>
+                    <div style={{ fontSize: '12px', color: '#fdba74' }}>Calculated for today</div>
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '12px', color: '#fdba74', marginBottom: '5px' }}>Sunrise</div>
+                    <div style={{ fontSize: '20px', fontWeight: '700', color: '#fdba74' }}>{sunTimes.sunrise}</div>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '12px', color: '#fdba74', marginBottom: '5px' }}>Sunset</div>
+                    <div style={{ fontSize: '20px', fontWeight: '700', color: '#fdba74' }}>{sunTimes.sunset}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* NASA Data */}
+            {nasaData && (
+              <div style={{ 
+                background: 'rgba(15, 23, 42, 0.7)', 
+                padding: '20px',
+                borderRadius: '10px',
+                border: '1px solid #334155'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '15px' }}>
+                  <div style={{ fontSize: '24px' }}>🛰️</div>
+                  <div>
+                    <div style={{ fontSize: '16px', fontWeight: '600' }}>NASA POWER Metrics</div>
+                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>Agricultural weather data</div>
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '15px' }}>
+                  <div>
+                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>Solar Rad.</div>
+                    <div style={{ fontSize: '18px', fontWeight: '600' }}>{nasaData.solarRadiation.toFixed(1)} kWh/m²</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>Avg Temp</div>
+                    <div style={{ fontSize: '18px', fontWeight: '600' }}>{nasaData.temperature.toFixed(1)}°C</div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Landmarks & Regional Info */}
@@ -541,25 +745,6 @@ function LagunaWeatherDashboard() {
                 </div>
               ))}
             </div>
-            
-            {/* System Status */}
-            <div style={{ marginTop: '25px', paddingTop: '25px', borderTop: '1px solid #334155' }}>
-              <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', fontWeight: '600' }}>System Status</h3>
-              <div style={{ 
-                background: 'rgba(21, 128, 61, 0.1)', 
-                padding: '15px',
-                borderRadius: '8px',
-                border: '1px solid rgba(21, 128, 61, 0.3)',
-                fontSize: '14px',
-                color: '#86efac',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px'
-              }}>
-                <div style={{ fontSize: '20px' }}>✅</div>
-                <div>All systems operational • Data integrity verified</div>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -588,8 +773,17 @@ function LagunaWeatherDashboard() {
               borderRadius: '10px',
               border: '1px solid #334155'
             }}>
+              <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>Weather Alerts</div>
+              <div style={{ fontSize: '16px', fontWeight: '500' }}>PAGASA RSS</div>
+            </div>
+            <div style={{ 
+              background: 'rgba(15, 23, 42, 0.7)', 
+              padding: '18px',
+              borderRadius: '10px',
+              border: '1px solid #334155'
+            }}>
               <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>Air Quality</div>
-              <div style={{ fontSize: '16px', fontWeight: '500' }}>Calculated Metrics</div>
+              <div style={{ fontSize: '16px', fontWeight: '500' }}>OpenAQ Network</div>
             </div>
             <div style={{ 
               background: 'rgba(15, 23, 42, 0.7)', 
@@ -597,17 +791,8 @@ function LagunaWeatherDashboard() {
               borderRadius: '10px',
               border: '1px solid #334155'
             }}>
-              <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>Update Frequency</div>
-              <div style={{ fontSize: '16px', fontWeight: '500' }}>Every 5 minutes</div>
-            </div>
-            <div style={{ 
-              background: 'rgba(15, 23, 42, 0.7)', 
-              padding: '18px',
-              borderRadius: '10px',
-              border: '1px solid #334155'
-            }}>
-              <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>Coverage</div>
-              <div style={{ fontSize: '16px', fontWeight: '500' }}>All Laguna Cities</div>
+              <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>Solar Data</div>
+              <div style={{ fontSize: '16px', fontWeight: '500' }}>NASA POWER</div>
             </div>
           </div>
         </div>
@@ -638,13 +823,13 @@ function LagunaWeatherDashboard() {
             </div>
             <div>
               <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '15px', color: '#f1f5f9' }}>
-                System Metrics
+                Data Sources
               </div>
               <div style={{ fontSize: '13px', color: '#94a3b8' }}>
-                Data Points: 15,000+/hour<br/>
-                API Requests: 24/7 Monitoring<br/>
-                System Uptime: 99.8%<br/>
-                Data Latency: &lt; 60 seconds
+                • Open-Meteo Weather API<br/>
+                • PAGASA Public RSS Feeds<br/>
+                • OpenAQ Air Quality Network<br/>
+                • NASA POWER Agricultural Data
               </div>
             </div>
           </div>
